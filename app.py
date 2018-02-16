@@ -93,7 +93,7 @@ def play_command():
     ):
         user_choice = g.memory['user_choice']['raw']
         genre = g.memory['choices'][user_choice]
-        replies = play(g.sp, genre)
+        replies = play(g.client, genre)
 
         return jsonify(
             status=200,

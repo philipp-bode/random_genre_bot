@@ -46,18 +46,17 @@ def buttons_for(genres, title=''):
 
 
 def spotify_login(url):
-    return {
-        'type': 'buttons',
-        'content': {
-            'title': 'BUTTON_TITLE',
-            'buttons': [{
-                'title': 'BUTTON_TITLE',
-                'type': 'BUTTON_TYPE',
-                'value': 'BUTTON_VALUE'
-            }]
-        }
-    }
     return [{
         'type': 'text',
         'content': url,
     }]
+    # return {
+    #     'type': 'buttons',
+    #     'content': {
+    #         'buttons': [{
+    #             'title': 'Login to Spotify',
+    #             'type': 'web_url',
+    #             'value': url
+    #         }]
+    #     }
+    # }
