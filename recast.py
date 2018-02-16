@@ -18,7 +18,6 @@ def list_element(i, playlist):
 
 def list_for(sp, genres):
     playlists = [Playlist.from_genre(sp, genre) for genre in genres.values()]
-    import pdb; pdb.set_trace()  # noqa: E702
     if not all((pl.found for pl in playlists)):
         return {}
     else:

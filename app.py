@@ -64,14 +64,13 @@ def test():
 def index():
     state = request.get_json()
     print(state)
-    skill = state['conversation']['skill']
     memory = state['conversation']['memory']
     try:
         top_intent = memory['nlp']['intents'][0]['slug']
     except (IndexError, KeyError):
         top_intent = ''
 
-    if top_intent == 'select' or skill == 'get_genre_response':
+    if top_intent == 'select':
         user_choice = memory['user_choice']['raw']
         genre = memory['choices'][user_choice]
         result, authenticated = _get_client()
@@ -84,7 +83,7 @@ def index():
             status=200,
             replies=replies,
         )
-    elif skill == 'display_genres':
+    elif top_intent == 'play_random':
         genres = {str(i + 1): v for i, v in enumerate(sample(GENRES, 3))}
         result, authenticated = _get_client()
         if not authenticated:
