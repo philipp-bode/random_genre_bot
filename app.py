@@ -30,18 +30,34 @@ def _get_oauth():
     )
 
 
+def _get_client():
+    sp_oauth = _get_oauth()
+    token_info = sp_oauth.get_cached_token()
+    if not token_info:
+        return (recast.spotify_login(sp_oauth.get_authorize_url()), False)
+    else:
+        return (Spotify(auth=token_info['access_token']), True)
+
+
 @app.route('/genres', methods=['GET'])
 def test():
     genres = {str(i + 1): v for i, v in enumerate(sample(GENRES, 3))}
-    return jsonify(
-        status=200,
-        replies=[recast.buttons_for(genres)],
-        conversation={
-          'memory': {
-            'choices': genres
-          }
-        }
-    )
+    result, authenticated = _get_client()
+    if not authenticated:
+        return jsonify(
+            status=200,
+            replies=result,
+        )
+    else:
+        return jsonify(
+            status=200,
+            replies=[recast.list_for(result, genres)],
+            conversation={
+              'memory': {
+                'choices': genres
+              }
+            }
+        )
 
 
 @app.route('/', methods=['POST'])
@@ -51,22 +67,18 @@ def index():
     skill = state['conversation']['skill']
     memory = state['conversation']['memory']
     try:
-        top_intent = memory['nlp']['intents'][0]
+        top_intent = memory['nlp']['intents'][0]['slug']
     except (IndexError, KeyError):
         top_intent = ''
 
     if top_intent == 'select' or skill == 'get_genre_response':
         user_choice = memory['user_choice']['raw']
         genre = memory['choices'][user_choice]
-        token_info = _get_oauth().get_cached_token()
-        if not token_info:
-            replies = [{
-                'type': 'text',
-                'content': "Aww sorry, you weren't logged in at the backend.",
-            }]
+        result, authenticated = _get_client()
+        if not authenticated:
+            replies = result
         else:
-            sp = Spotify(auth=token_info['access_token'])
-            replies = play(sp, genre)
+            replies = play(result, genre)
 
         return jsonify(
             status=200,
@@ -74,15 +86,22 @@ def index():
         )
     elif skill == 'display_genres':
         genres = {str(i + 1): v for i, v in enumerate(sample(GENRES, 3))}
-        return jsonify(
-            status=200,
-            replies=[recast.buttons_for(genres)],
-            conversation={
-              'memory': {
-                'choices': genres
-              }
-            }
-        )
+        result, authenticated = _get_client()
+        if not authenticated:
+            return jsonify(
+                status=200,
+                replies=result,
+            )
+        else:
+            return jsonify(
+                status=200,
+                replies=[recast.list_for(result, genres)],
+                conversation={
+                  'memory': {
+                    'choices': genres
+                  }
+                }
+            )
 
 
 @app.route('/errors', methods=['POST'])
@@ -110,4 +129,4 @@ def callback():
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)

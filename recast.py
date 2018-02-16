@@ -1,34 +1,33 @@
-
-def list_element():
-
-    {
-        'title': 'ELEM_1_TITLE',
-        'imageUrl': 'IMAGE_URL',
-        'subtitle': 'ELEM_1_SUBTITLE',
-        'buttons': [
-          {
-            'title': 'BUTTON_1_TITLE',
-            'type': 'BUTTON_TYPE',
-            'value': 'BUTTON_1_VALUE'
-          }
-        ]
-    }
+from genres import Playlist
 
 
-def list_for():
+def list_element(i, playlist):
     return {
-      'type': 'list',
-      'content': {
-        'elements': [],
+        'title': playlist.name,
+        'imageUrl': playlist.image_url,
+        'subtitle': playlist.id,
         'buttons': [
           {
-            'title': 'BUTTON_1_TITLE',
+            'title': str(i),
             'type': 'BUTTON_TYPE',
-            'value': 'BUTTON_1_VALUE'
+            'value': f'Select choice {i}'
           }
         ]
-      }
     }
+
+
+def list_for(sp, genres):
+    playlists = [Playlist.from_genre(sp, genre) for genre in genres.values()]
+    import pdb; pdb.set_trace()  # noqa: E702
+    if not all((pl.found for pl in playlists)):
+        return {}
+    else:
+        return {
+          'type': 'list',
+          'content': {
+            'elements': [list_element(i, pl) for i, pl in enumerate(playlists)],
+          }
+        }
 
 
 def buttons_for(genres, title=''):
@@ -45,3 +44,21 @@ def buttons_for(genres, title=''):
         ]
       }
     }
+
+
+def spotify_login(url):
+    return [{
+        'type': 'text',
+        'content': "Aww sorry, you weren't logged in at the backend.",
+    }, {
+        'type': 'quickReplies',
+        'content': {
+            'buttons': [
+                {
+                    'type': 'web_url',
+                    'url': url,
+                    'title': 'Login',
+                }
+            ]
+        }
+    }]

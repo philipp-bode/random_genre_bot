@@ -1,10 +1,52 @@
+class Playlist:
+
+    def __init__(self, p_id, name=None, url=None, image_url=None):
+        if not p_id:
+            self.found = False
+        else:
+            self.id = p_id
+            self.name = name
+            self.url = url
+            self.image_url = image_url
+            self.found = True
+
+    def context_uri(self):
+        return f'spotify:user:thesoundsofspotify:playlist:{self.id}'
+
+    @classmethod
+    def from_genre(cls, sp, genre):
+        result = sp.search(
+            f'The Sound of {genre.title()}', limit=1, type='playlist')
+        item = result.get('playlists', {}).get('items', [None])[0]
+        return cls.from_item(item)
+
+    @classmethod
+    def from_item(cls, item):
+        p_id = item.get('id')
+        try:
+            pl_attributes = {
+                'name': item['name'],
+                'url': item['external_urls']['spotify'],
+                'image_url': item['images'][0]['url'],
+            }
+        except (KeyError, AttributeError, IndexError):
+            pl_attributes = {}
+        return cls(p_id, **pl_attributes)
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}({self.name})'
+
+    def __str__(self):
+        return self.__repr__()
+
+
 def play(sp, genre):
     sound_of_choice_playlist = sp.search(f'The Sound of {genre.title()}', limit=1, type='playlist')
     item = sound_of_choice_playlist.get('playlists', {}).get('items', [None])[0]
     if not item:
         return [{
-                'type': 'text',
-                'content': f"Aww, I couldn't find the playlist '{sound_of_choice_playlist}'",
+            'type': 'text',
+            'content': f"Aww, I couldn't find the playlist '{sound_of_choice_playlist}'",
         }]
     playback = sp.current_playback()
     device_id = playback['device']['id']
@@ -12,8 +54,8 @@ def play(sp, genre):
     print(device_id, context_uri)
     sp.start_playback(device_id=device_id, context_uri=context_uri)
     return [{
-            'type': 'text',
-            'content': f"Playing '{sound_of_choice_playlist}'. Enjoy!",
+        'type': 'text',
+        'content': f"Playing '{sound_of_choice_playlist['external_urls']['spotify']}'. Enjoy!",
     }]
 
 
