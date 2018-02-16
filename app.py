@@ -32,19 +32,34 @@ def _get_oauth():
 
 @app.route('/genres', methods=['GET'])
 def test():
-    return jsonify(recast.buttons_for(sample(GENRES, 3)))
+    genres = {f'choice{i + 1}': v for i, v in enumerate(sample(GENRES, 3))}
+    return jsonify(
+        status=200,
+        replies=[recast.buttons_for(genres)],
+        conversation={
+          'memory': {
+            'choices': genres
+          }
+        }
+    )
 
 
 @app.route('/', methods=['POST'])
 def index():
-    print(json.loads(request.get_data()))
-    return jsonify(
-        status=200,
-        replies=[recast.buttons_for(sample(GENRES, 3))],
-        conversation={
-          'memory': {'key': 'value'}
-        }
-    )
+    state = request.get_json()
+    print(state)
+    skill = state['conversation']['skill']
+    if skill == 'display_genres':
+        genres = {f'choice{i + 1}': v for i, v in enumerate(sample(GENRES, 3))}
+        return jsonify(
+            status=200,
+            replies=[recast.buttons_for(genres)],
+            conversation={
+              'memory': {
+                'choices': genres
+              }
+            }
+        )
 
 
 @app.route('/errors', methods=['POST'])

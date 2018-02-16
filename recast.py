@@ -36,12 +36,12 @@ def buttons_for(genres, title=''):
     return {
       'type': 'quickReplies',
       'content': {
-        'title': 'TITLE',
+        'title': title,
         'buttons': [
           {
-            'title': genre,
-            'value': genre
-          } for genre in genres
+            'title': v.title(),
+            'value': k
+          } for k, v in genres.items()
         ]
       }
     }
