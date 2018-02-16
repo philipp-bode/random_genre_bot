@@ -1,7 +1,11 @@
 import json
 import os
 from flask import Flask, jsonify, redirect, request
+from random import sample
 from spotipy import oauth2
+
+import recast
+from genres import GENRES
 
 app = Flask(__name__)
 
@@ -26,9 +30,9 @@ def _get_oauth():
     )
 
 
-# @app.route('/test', methods=['GET'])
-# def test():
-#     import pdb; pdb.set_trace()  # noqa: E702
+@app.route('/genres', methods=['GET'])
+def test():
+    return jsonify(recast.buttons_for(sample(GENRES, 3)))
 
 
 @app.route('/', methods=['POST'])
@@ -36,10 +40,7 @@ def index():
     print(json.loads(request.get_data()))
     return jsonify(
         status=200,
-        replies=[{
-            'type': 'text',
-            'content': 'Roger that',
-        }],
+        replies=[recast.buttons_for(sample(GENRES, 3))],
         conversation={
           'memory': {'key': 'value'}
         }
