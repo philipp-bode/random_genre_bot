@@ -50,18 +50,12 @@ def index():
     print(state)
     skill = state['conversation']['skill']
     memory = state['conversation']['memory']
-    if skill == 'display_genres':
-        genres = {str(i + 1): v for i, v in enumerate(sample(GENRES, 3))}
-        return jsonify(
-            status=200,
-            replies=[recast.buttons_for(genres)],
-            conversation={
-              'memory': {
-                'choices': genres
-              }
-            }
-        )
-    elif skill == 'get_genre_response':
+    try:
+        top_intent = memory['nlp']['intents'][0]
+    except (IndexError, KeyError):
+        top_intent = ''
+
+    if top_intent == 'select' or skill == 'get_genre_response':
         user_choice = memory['user_choice']['raw']
         genre = memory['choices'][user_choice]
         token_info = _get_oauth().get_cached_token()
@@ -77,6 +71,17 @@ def index():
         return jsonify(
             status=200,
             replies=replies,
+        )
+    elif skill == 'display_genres':
+        genres = {str(i + 1): v for i, v in enumerate(sample(GENRES, 3))}
+        return jsonify(
+            status=200,
+            replies=[recast.buttons_for(genres)],
+            conversation={
+              'memory': {
+                'choices': genres
+              }
+            }
         )
 
 
