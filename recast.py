@@ -49,16 +49,5 @@ def buttons_for(genres, title=''):
 def spotify_login(url):
     return [{
         'type': 'text',
-        'content': "Aww sorry, you weren't logged in at the backend.",
-    }, {
-        'type': 'quickReplies',
-        'content': {
-            'buttons': [
-                {
-                    'type': 'web_url',
-                    'url': url,
-                    'title': 'Login',
-                }
-            ]
-        }
+        'content': url,
     }]
