@@ -1,6 +1,6 @@
 def play(sp, genre):
     sound_of_choice_playlist = sp.search(f'The Sound of {genre.title()}', limit=1, type='playlist')
-    item = sound_of_choice_playlist['playlists'].get('items', [None])[0]
+    item = sound_of_choice_playlist.get('playlists', {}).get('items', [None])[0]
     if not item:
         return [{
                 'type': 'text',
