@@ -10,6 +10,7 @@ class Playlist:
             self.image_url = image_url
             self.found = True
 
+    @property
     def context_uri(self):
         return f'spotify:user:thesoundsofspotify:playlist:{self.id}'
 
