@@ -1,3 +1,22 @@
+def play(sp, genre):
+    sound_of_choice_playlist = sp.search(f'The Sound of {genre.title()}', limit=1, type='playlist')
+    item = sound_of_choice_playlist['playlists'].get('items', [None])[0]
+    if not item:
+        return [{
+                'type': 'text',
+                'content': f"Aww, I couldn't find the playlist '{sound_of_choice_playlist}'",
+        }]
+    playback = sp.current_playback()
+    device_id = playback['device']['id']
+    context_uri = f"spotify:user:thesoundsofspotify:playlist:{item['id']}"
+    print(device_id, context_uri)
+    sp.start_playback(device_id=device_id, context_uri=context_uri)
+    return [{
+            'type': 'text',
+            'content': f"Playing '{sound_of_choice_playlist}'. Enjoy!",
+    }]
+
+
 GENRES = [
     '21st century classical',
     'a cappella',

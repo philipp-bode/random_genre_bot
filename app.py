@@ -2,10 +2,10 @@ import json
 import os
 from flask import Flask, jsonify, redirect, request
 from random import sample
-from spotipy import oauth2
+from spotipy import oauth2, Spotify
 
 import recast
-from genres import GENRES
+from genres import GENRES, play
 
 app = Flask(__name__)
 
@@ -32,7 +32,7 @@ def _get_oauth():
 
 @app.route('/genres', methods=['GET'])
 def test():
-    genres = {f'choice{i + 1}': v for i, v in enumerate(sample(GENRES, 3))}
+    genres = {str(i + 1): v for i, v in enumerate(sample(GENRES, 3))}
     return jsonify(
         status=200,
         replies=[recast.buttons_for(genres)],
@@ -49,8 +49,9 @@ def index():
     state = request.get_json()
     print(state)
     skill = state['conversation']['skill']
+    memory = state['conversation']['memory']
     if skill == 'display_genres':
-        genres = {f'choice{i + 1}': v for i, v in enumerate(sample(GENRES, 3))}
+        genres = {str(i + 1): v for i, v in enumerate(sample(GENRES, 3))}
         return jsonify(
             status=200,
             replies=[recast.buttons_for(genres)],
@@ -59,6 +60,23 @@ def index():
                 'choices': genres
               }
             }
+        )
+    elif skill == 'get_genre_response':
+        user_choice = memory['user_choice']['raw']
+        genre = memory['choices'][user_choice]
+        token = _get_oauth().get_cached_token()
+        if not token:
+            replies = [{
+                'type': 'text',
+                'content': 'MY_TEXT',
+            }]
+        else:
+            sp = Spotify(auth=token)
+            replies = play(sp, genre)
+
+        return jsonify(
+            status=200,
+            replies=replies,
         )
 
 
@@ -87,4 +105,4 @@ def callback():
 
 
 if __name__ == '__main__':
-    app.run(use_reloader=True)
+    app.run()

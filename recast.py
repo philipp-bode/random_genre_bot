@@ -39,8 +39,8 @@ def buttons_for(genres, title=''):
         'title': title,
         'buttons': [
           {
-            'title': v.title(),
-            'value': k
+            'title': f'({k}): {v.title()}',
+            'value': f'Select genre {k}.'
           } for k, v in genres.items()
         ]
       }
