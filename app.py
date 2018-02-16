@@ -64,13 +64,14 @@ def test():
 def index():
     state = request.get_json()
     print(state)
+    skill = state['conversation']['skill']
     memory = state['conversation']['memory']
     try:
         top_intent = memory['nlp']['intents'][0]['slug']
     except (IndexError, KeyError):
         top_intent = ''
 
-    if top_intent == 'select':
+    if top_intent == 'select' or skill == 'get_genre_response':
         user_choice = memory['user_choice']['raw']
         genre = memory['choices'][user_choice]
         result, authenticated = _get_client()
@@ -83,7 +84,7 @@ def index():
             status=200,
             replies=replies,
         )
-    elif top_intent == 'play_random':
+    elif top_intent == 'play_random' or skill == 'display_genres':
         genres = {str(i + 1): v for i, v in enumerate(sample(GENRES, 3))}
         result, authenticated = _get_client()
         if not authenticated:
@@ -101,6 +102,17 @@ def index():
                   }
                 }
             )
+    else:
+        jsonify(
+            status=200,
+            replies=[{
+                'type': 'text',
+                'content': (
+                    f"I don't know what to say. :("
+                    f"You want {top_intent} while we're in {skill}?"
+                ),
+            }]
+        )
 
 
 @app.route('/errors', methods=['POST'])
