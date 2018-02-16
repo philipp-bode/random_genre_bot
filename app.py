@@ -1,6 +1,6 @@
 import json
 import os
-from flask import Flask, jsonify, redirect, request
+from flask import Flask, jsonify, g, redirect, request
 from random import sample
 from spotipy import oauth2, Spotify
 
@@ -30,28 +30,89 @@ def _get_oauth():
     )
 
 
-def _get_client():
-    sp_oauth = _get_oauth()
-    token_info = sp_oauth.get_cached_token()
-    if not token_info:
-        return (recast.spotify_login(sp_oauth.get_authorize_url()), False)
-    else:
-        return (Spotify(auth=token_info['access_token']), True)
+@app.before_request
+def get_client():
+    if request.method == 'POST' or request.endpoint == 'test':
+        sp_oauth = _get_oauth()
+        token_info = sp_oauth.get_cached_token()
+        if not token_info:
+            return jsonify(
+                status=200,
+                replies=recast.spotify_login(sp_oauth.get_authorize_url())
+            )
+        else:
+            g.client = Spotify(auth=token_info['access_token'])
+
+
+@app.before_request
+def attach_nlp():
+    if request.method == 'POST':
+        state = request.get_json()
+        print(state)
+        g.skill = state['conversation']['skill']
+        g.memory = state['conversation']['memory']
+        try:
+            g.top_intent = g.memory['nlp']['intents'][0]['slug']
+        except (IndexError, KeyError):
+            g.top_intent = ''
+
+
+def _no_match_response():
+    return jsonify(
+        status=200,
+        replies=[{
+            'type': 'text',
+            'content': (
+                f"I don't know what to say. :("
+                f"You want {g.top_intent} while we're in {g.skill}?"
+            ),
+        }]
+    )
 
 
 @app.route('/genres', methods=['GET'])
 def test():
     genres = {str(i + 1): v for i, v in enumerate(sample(GENRES, 3))}
-    result, authenticated = _get_client()
-    if not authenticated:
+
+    return jsonify(
+        status=200,
+        replies=[recast.list_for(g.client, genres)],
+        conversation={
+          'memory': {
+            'choices': genres
+          }
+        }
+    )
+
+
+@app.route('/recast/play', methods=['POST'])
+def play_command():
+    if (
+        g.top_intent == 'select' or
+        g.skill == 'get_genre_response'
+    ):
+        user_choice = g.memory['user_choice']['raw']
+        genre = g.memory['choices'][user_choice]
+        replies = play(g.sp, genre)
+
         return jsonify(
             status=200,
-            replies=result,
+            replies=replies,
         )
-    else:
+
+    return _no_match_response()
+
+
+@app.route('/recast/genres', methods=['POST'])
+def genres_command():
+    if (
+        g.top_intent == 'play_random' or
+        g.skill == 'display_genres'
+    ):
+        genres = {str(i + 1): v for i, v in enumerate(sample(GENRES, 3))}
         return jsonify(
             status=200,
-            replies=[recast.list_for(result, genres)],
+            replies=[recast.list_for(g.client, genres)],
             conversation={
               'memory': {
                 'choices': genres
@@ -59,65 +120,17 @@ def test():
             }
         )
 
+    return _no_match_response()
+
 
 @app.route('/', methods=['POST'])
 def index():
-    state = request.get_json()
-    print(state)
-    skill = state['conversation']['skill']
-    memory = state['conversation']['memory']
-    try:
-        top_intent = memory['nlp']['intents'][0]['slug']
-    except (IndexError, KeyError):
-        top_intent = ''
-
-    if top_intent == 'select' or skill == 'get_genre_response':
-        user_choice = memory['user_choice']['raw']
-        genre = memory['choices'][user_choice]
-        result, authenticated = _get_client()
-        if not authenticated:
-            replies = result
-        else:
-            replies = play(result, genre)
-
-        return jsonify(
-            status=200,
-            replies=replies,
-        )
-    elif top_intent == 'play_random' or skill == 'display_genres':
-        genres = {str(i + 1): v for i, v in enumerate(sample(GENRES, 3))}
-        result, authenticated = _get_client()
-        if not authenticated:
-            return jsonify(
-                status=200,
-                replies=result,
-            )
-        else:
-            return jsonify(
-                status=200,
-                replies=[recast.list_for(result, genres)],
-                conversation={
-                  'memory': {
-                    'choices': genres
-                  }
-                }
-            )
-    else:
-        jsonify(
-            status=200,
-            replies=[{
-                'type': 'text',
-                'content': (
-                    f"I don't know what to say. :("
-                    f"You want {top_intent} while we're in {skill}?"
-                ),
-            }]
-        )
+    return jsonify(status=200)
 
 
 @app.route('/errors', methods=['POST'])
 def errors():
-    print(json.loads(request.get_data()))
+    print(request.get_json())
     return jsonify(status=200)
 
 
@@ -129,6 +142,8 @@ def login():
     if not token_info:
         auth_url = sp_oauth.get_authorize_url()
         return redirect(auth_url)
+    else:
+        return jsonify(status=200, token_expires=token_info['expires_at'])
 
 
 @app.route('/callback', methods=['GET'])

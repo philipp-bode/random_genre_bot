@@ -3,14 +3,14 @@ from genres import Playlist
 
 def list_element(i, playlist):
     return {
-        'title': playlist.name,
+        'title': getattr(playlist, 'genre'),
         'imageUrl': playlist.image_url,
-        'subtitle': playlist.id,
+        'subtitle': playlist.name,
         'buttons': [
           {
-            'title': str(i),
+            'title': str(i + 1),
             'type': 'BUTTON_TYPE',
-            'value': f'Select choice {i}'
+            'value': f'Select choice {i + 1}'
           }
         ]
     }
@@ -24,7 +24,7 @@ def list_for(sp, genres):
         return {
           'type': 'list',
           'content': {
-            'elements': [list_element(i, pl) for i, pl in enumerate(playlists)],
+            'elements': [list_element(i, pl) for i, pl in enumerate(playlists)]
           }
         }
 
@@ -46,6 +46,17 @@ def buttons_for(genres, title=''):
 
 
 def spotify_login(url):
+    return {
+        'type': 'buttons',
+        'content': {
+            'title': 'BUTTON_TITLE',
+            'buttons': [{
+                'title': 'BUTTON_TITLE',
+                'type': 'BUTTON_TYPE',
+                'value': 'BUTTON_VALUE'
+            }]
+        }
+    }
     return [{
         'type': 'text',
         'content': url,

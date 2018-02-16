@@ -18,7 +18,9 @@ class Playlist:
         result = sp.search(
             f'The Sound of {genre.title()}', limit=1, type='playlist')
         item = result.get('playlists', {}).get('items', [None])[0]
-        return cls.from_item(item)
+        pl = cls.from_item(item)
+        pl.genre = genre
+        return pl
 
     @classmethod
     def from_item(cls, item):
@@ -41,21 +43,19 @@ class Playlist:
 
 
 def play(sp, genre):
-    sound_of_choice_playlist = sp.search(f'The Sound of {genre.title()}', limit=1, type='playlist')
-    item = sound_of_choice_playlist.get('playlists', {}).get('items', [None])[0]
-    if not item:
+    pl = Playlist.from_genre(sp, genre)
+    if not pl.found:
         return [{
             'type': 'text',
-            'content': f"Aww, I couldn't find the playlist '{sound_of_choice_playlist}'",
+            'content': f"Aww, I couldn't find the playlist for '{genre}'",
         }]
     playback = sp.current_playback()
     device_id = playback['device']['id']
-    context_uri = f"spotify:user:thesoundsofspotify:playlist:{item['id']}"
-    print(device_id, context_uri)
-    sp.start_playback(device_id=device_id, context_uri=context_uri)
+    print(device_id, pl.context_uri)
+    sp.start_playback(device_id=device_id, context_uri=pl.context_uri)
     return [{
         'type': 'text',
-        'content': f"Playing '{sound_of_choice_playlist['external_urls']['spotify']}'. Enjoy!",
+        'content': f"Playing '{pl.url}'. Enjoy!",
     }]
 
 
