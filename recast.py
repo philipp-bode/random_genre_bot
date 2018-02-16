@@ -31,7 +31,8 @@ def list_for():
     }
 
 
-def buttons_for(genres, title):
+def buttons_for(genres, title=''):
+    title = title or 'Select a genre!'
     return {
       'type': 'quickReplies',
       'content': {
