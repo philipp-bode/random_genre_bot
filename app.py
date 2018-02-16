@@ -64,14 +64,14 @@ def index():
     elif skill == 'get_genre_response':
         user_choice = memory['user_choice']['raw']
         genre = memory['choices'][user_choice]
-        token = _get_oauth().get_cached_token()
-        if not token:
+        token_info = _get_oauth().get_cached_token()
+        if not token_info:
             replies = [{
                 'type': 'text',
-                'content': 'MY_TEXT',
+                'content': "Aww sorry, you weren't logged in at the backend.",
             }]
         else:
-            sp = Spotify(auth=token)
+            sp = Spotify(auth=token_info['access_token'])
             replies = play(sp, genre)
 
         return jsonify(
