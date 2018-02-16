@@ -1,19 +1,74 @@
-from datetime import datetime
-from flask import Flask
+import json
+import os
+from flask import Flask, jsonify, redirect, request
+from spotipy import oauth2
+
 app = Flask(__name__)
 
+scope = (
+    'user-read-currently-playing '
+    'user-modify-playback-state '
+    'user-read-playback-state '
+)
 
-@app.route('/')
-def homepage():
-    the_time = datetime.now().strftime("%A, %d %b %Y %l:%M %p")
 
-    return """
-    <h1>Hello heroku</h1>
-    <p>It is currently {time}.</p>
+def _get_oauth():
+    client_id = os.getenv('SPOTIPY_CLIENT_ID')
+    client_secret = os.getenv('SPOTIPY_CLIENT_SECRET')
+    # redirect_uri = os.getenv('SPOTIPY_REDIRECT_URI')
+    redirect_uri = f'{request.host_url}callback'
+    username = os.getenv('SPOTIPY_USERNAME')
 
-    <img src="http://loremflickr.com/600/400">
-    """.format(time=the_time)
+    cache_path = f'.cache-{username}'
+    return oauth2.SpotifyOAuth(
+        client_id, client_secret, redirect_uri,
+        scope=scope, cache_path=cache_path
+    )
+
+
+# @app.route('/test', methods=['GET'])
+# def test():
+#     import pdb; pdb.set_trace()  # noqa: E702
+
+
+@app.route('/', methods=['POST'])
+def index():
+    print(json.loads(request.get_data()))
+    return jsonify(
+        status=200,
+        replies=[{
+            'type': 'text',
+            'content': 'Roger that',
+        }],
+        conversation={
+          'memory': {'key': 'value'}
+        }
+    )
+
+
+@app.route('/errors', methods=['POST'])
+def errors():
+    print(json.loads(request.get_data()))
+    return jsonify(status=200)
+
+
+@app.route('/login', methods=['GET'])
+def login():
+    sp_oauth = _get_oauth()
+    token_info = sp_oauth.get_cached_token()
+
+    if not token_info:
+        auth_url = sp_oauth.get_authorize_url()
+        return redirect(auth_url)
+
+
+@app.route('/callback', methods=['GET'])
+def callback():
+    sp_oauth = _get_oauth()
+    code = request.args.get('code')
+    token_info = sp_oauth.get_access_token(code)
+    return jsonify(status=200, token_expires=token_info['expires_at'])
 
 
 if __name__ == '__main__':
-    app.run(debug=True, use_reloader=True)
+    app.run(use_reloader=True)
