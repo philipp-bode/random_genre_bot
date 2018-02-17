@@ -1,11 +1,10 @@
-import json
 import os
 from flask import Flask, jsonify, g, redirect, request
 from random import sample
 from spotipy import oauth2, Spotify
 
 import recast
-from genres import GENRES, play
+from genres import GENRES, play, Playlist
 
 app = Flask(__name__)
 
@@ -15,18 +14,17 @@ scope = (
     'user-read-playback-state '
 )
 
+CLIENT_ID = os.getenv('SPOTIPY_CLIENT_ID')
+CLIENT_SECRET = os.getenv('SPOTIPY_CLIENT_SECRET')
+CACHE_PATH = f".cache-{os.getenv('SPOTIPY_USERNAME')}"
+
 
 def _get_oauth():
-    client_id = os.getenv('SPOTIPY_CLIENT_ID')
-    client_secret = os.getenv('SPOTIPY_CLIENT_SECRET')
-    # redirect_uri = os.getenv('SPOTIPY_REDIRECT_URI')
     redirect_uri = f'{request.host_url}callback'
-    username = os.getenv('SPOTIPY_USERNAME')
 
-    cache_path = f'.cache-{username}'
     return oauth2.SpotifyOAuth(
-        client_id, client_secret, redirect_uri,
-        scope=scope, cache_path=cache_path
+        CLIENT_ID, CLIENT_SECRET, redirect_uri,
+        scope=scope, cache_path=CACHE_PATH
     )
 
 
@@ -109,10 +107,11 @@ def genres_command():
         g.top_intent == 'play_random' or
         g.skill == 'display_genres'
     ):
-        genres = {str(i + 1): v for i, v in enumerate(sample(GENRES, 3))}
+        genres = sample(GENRES, 3)
+        playlists = [Playlist.from_genre(g.client, genre) for genre in genres]
         return jsonify(
             status=200,
-            replies=[recast.list_for(g.client, genres)],
+            replies=recast.buttons_for(playlists),
             conversation={
               'memory': {
                 'choices': genres

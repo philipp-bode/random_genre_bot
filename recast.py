@@ -16,33 +16,35 @@ def list_element(i, playlist):
     }
 
 
-def list_for(sp, genres):
-    playlists = [Playlist.from_genre(sp, genre) for genre in genres.values()]
-    if not all((pl.found for pl in playlists)):
-        return {}
-    else:
-        return {
-          'type': 'list',
-          'content': {
-            'elements': [list_element(i, pl) for i, pl in enumerate(playlists)]
-          }
-        }
+def list_for(playlists):
 
-
-def buttons_for(genres, title=''):
-    title = title or 'Select a genre!'
     return {
+      'type': 'list',
+      'content': {
+        'elements': [list_element(i, pl) for i, pl in enumerate(playlists)]
+      }
+    }
+
+
+def buttons_for(playlists, title=''):
+    title = title or 'Select a genre!'
+    replies = [{
+        'type': 'text',
+        'content': pl.url,
+    } for pl in playlists]
+    replies.append({
       'type': 'quickReplies',
       'content': {
         'title': title,
         'buttons': [
           {
-            'title': f'({k}): {v.title()}',
-            'value': f'Select genre {k}.'
-          } for k, v in genres.items()
+            'title': f'({i + 1})',
+            'value': f'Select choice {i + 1}.'
+          } for i, _ in enumerate(playlists)
         ]
       }
-    }
+    })
+    return replies
 
 
 def spotify_login(url):
