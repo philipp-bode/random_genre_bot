@@ -89,9 +89,18 @@ def play_command():
         g.top_intent == 'select' or
         g.skill == 'get_genre_response'
     ):
-        user_choice = g.memory['user_choice']['raw']
-        genre = g.memory['choices'][user_choice]
-        replies = play(g.client, genre)
+        try:
+            selected = g.memory['user_choice']['scalar']
+            choice = g.memory['choices'][selected]
+        except (IndexError, KeyError):
+            return jsonify(
+                status=200,
+                replies=[{
+                    'type': 'text',
+                    'content': 'That was not a valid choice!',
+                }]
+            )
+        replies = play(g.client, Playlist(**choice))
 
         return jsonify(
             status=200,
@@ -107,14 +116,16 @@ def genres_command():
         g.top_intent == 'play_random' or
         g.skill == 'display_genres'
     ):
-        genres = sample(GENRES, 3)
-        playlists = [Playlist.from_genre(g.client, genre) for genre in genres]
+        playlists = Playlist.fetch_random(g.client)
         return jsonify(
             status=200,
             replies=recast.buttons_for(playlists),
             conversation={
               'memory': {
-                'choices': genres
+                'choices': [{
+                    'p_id': pl.id,
+                    'url': pl.url,
+                } for pl in playlists]
               }
             }
         )

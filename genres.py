@@ -1,3 +1,20 @@
+from random import shuffle
+
+
+def _random_iter(iterable):
+    indices = list(range(len(iterable)))
+    shuffle(indices)
+    for i in indices:
+        yield iterable[i]
+
+
+class PlaylistNotFoundError(RuntimeError):
+    """An error to be raised when a playlist for a genre wasn't found."""
+
+    def __init__(self, genre):
+        super().__init__('Playlist for {genre} could not be found!')
+
+
 class Playlist:
 
     def __init__(self, p_id, name=None, url=None, image_url=None):
@@ -18,8 +35,10 @@ class Playlist:
     def from_genre(cls, sp, genre):
         result = sp.search(
             f'The Sound of {genre.title()}', limit=1, type='playlist')
-        item = result.get('playlists', {}).get('items', [None])[0]
-        pl = cls.from_item(item)
+        items = result.get('playlists', {}).get('items')
+        if not items:
+            raise PlaylistNotFoundError(genre)
+        pl = cls.from_item(items[0])
         pl.genre = genre
         return pl
 
@@ -36,6 +55,19 @@ class Playlist:
             pl_attributes = {}
         return cls(p_id, **pl_attributes)
 
+    @classmethod
+    def fetch_random(cls, sp, count=3):
+        choices = []
+        random_iter = _random_iter(GENRES)
+        for genre in random_iter:
+            try:
+                choices.append(Playlist.from_genre(sp, genre))
+            except PlaylistNotFoundError:
+                pass
+
+            if len(choices) == count:
+                return choices
+
     def __repr__(self):
         return f'{self.__class__.__name__}({self.name})'
 
@@ -43,20 +75,11 @@ class Playlist:
         return self.__repr__()
 
 
-def play(sp, genre):
-    pl = Playlist.from_genre(sp, genre)
-    if not pl.found:
-        return [{
-            'type': 'text',
-            'content': f"Aww, I couldn't find the playlist for '{genre}'",
-        }]
-    playback = sp.current_playback()
-    device_id = playback['device']['id']
-    print(device_id, pl.context_uri)
-    sp.start_playback(device_id=device_id, context_uri=pl.context_uri)
+def play(sp, playlist, **kwargs):
+    sp.start_playback(context_uri=playlist.context_uri, **kwargs)
     return [{
         'type': 'text',
-        'content': f"Playing '{pl.url}'. Enjoy!",
+        'content': f"Playing '{playlist.url}'. Enjoy!",
     }]
 
 

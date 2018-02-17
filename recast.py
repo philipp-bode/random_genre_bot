@@ -1,6 +1,3 @@
-from genres import Playlist
-
-
 def list_element(i, playlist):
     return {
         'title': getattr(playlist, 'genre'),
@@ -30,7 +27,7 @@ def buttons_for(playlists, title=''):
     title = title or 'Select a genre!'
     replies = [{
         'type': 'text',
-        'content': pl.url,
+        'content': pl.name,
     } for pl in playlists]
     replies.append({
       'type': 'quickReplies',
@@ -38,8 +35,8 @@ def buttons_for(playlists, title=''):
         'title': title,
         'buttons': [
           {
-            'title': f'({i + 1})',
-            'value': f'Select choice {i + 1}.'
+            'title': f'Select {i + 1}.',
+            'value': f'Select {i + 1}.'
           } for i, _ in enumerate(playlists)
         ]
       }
