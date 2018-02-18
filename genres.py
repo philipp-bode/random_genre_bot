@@ -1,3 +1,4 @@
+from flask import g
 from random import shuffle
 
 
@@ -78,12 +79,12 @@ class Playlist:
 def play(sp, playlist, **kwargs):
     sp.start_playback(context_uri=playlist.context_uri, **kwargs)
     return {
-        'replies':[{
+        'replies': [{
             'type': 'text',
-            'content': f"Playing '{playlist.url}'. Enjoy!",
+            'content': f"Playing '{playlist.name}'. Enjoy! ({playlist.url})",
         }],
         'conversation': {
-          'memory': {'currently_playing': playlist.id}
+          'memory': {'currently_playing': playlist.id, **g.memory}
         },
     }
 
