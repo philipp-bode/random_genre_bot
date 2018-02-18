@@ -77,10 +77,15 @@ class Playlist:
 
 def play(sp, playlist, **kwargs):
     sp.start_playback(context_uri=playlist.context_uri, **kwargs)
-    return [{
-        'type': 'text',
-        'content': f"Playing '{playlist.url}'. Enjoy!",
-    }]
+    return {
+        'replies':[{
+            'type': 'text',
+            'content': f"Playing '{playlist.url}'. Enjoy!",
+        }],
+        'conversation': {
+          'memory': {'currently_playing': playlist.id}
+        },
+    }
 
 
 GENRES = [

@@ -89,23 +89,22 @@ def _get_choice(memory):
     index = (
         selection.get('scalar') or
         selection.get('rank'))
-    return choices[index]
+    return choices[index - 1 if index > 0 else index]
 
 
 @app.route('/recast/play', methods=['POST'])
 def play_command():
     try:
-        choice = _get_choice(index)
-        replies = play(g.client, Playlist(**choice))
+        choice = Playlist(**_get_choice(index))
+        response = play(g.client, choice)
     except (IndexError, KeyError):
-        replies = [{
+        response = {'replies': [{
             'type': 'text',
             'content': 'That was not a valid choice!',
-        }]
-
+        }]}
     return jsonify(
         status=200,
-        replies=replies,
+        **response
     )
 
     return _no_match_response()
