@@ -23,8 +23,7 @@ def list_for(playlists):
     }
 
 
-def buttons_for(playlists, title=''):
-    title = title or 'Select a genre!'
+def buttons_for(playlists):
     replies = [{
         'type': 'text',
         'content': pl.name,
@@ -32,7 +31,7 @@ def buttons_for(playlists, title=''):
     replies.append({
       'type': 'quickReplies',
       'content': {
-        'title': title,
+        'title': 'What would you like to listen to?',
         'buttons': [
           {
             'title': f'Select {i + 1}.',

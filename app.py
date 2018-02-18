@@ -50,7 +50,7 @@ def attach_nlp():
         g.skill = state['conversation']['skill']
         g.memory = state['conversation']['memory']
         try:
-            g.top_intent = g.memory['nlp']['intents'][0]['slug']
+            g.top_intent = state['nlp']['intents'][0]['slug']
         except (IndexError, KeyError):
             g.top_intent = ''
 
@@ -83,52 +83,49 @@ def test():
     )
 
 
+def _get_choice(memory):
+    selection = g.memory['user_choice']
+    choices = g.memory['choices']
+    index = (
+        selection.get('scalar') or
+        selection.get('rank'))
+    return choices[index]
+
+
 @app.route('/recast/play', methods=['POST'])
 def play_command():
-    if (
-        g.top_intent == 'select' or
-        g.skill == 'get_genre_response'
-    ):
-        try:
-            selected = g.memory['user_choice']['scalar']
-            choice = g.memory['choices'][selected]
-        except (IndexError, KeyError):
-            return jsonify(
-                status=200,
-                replies=[{
-                    'type': 'text',
-                    'content': 'That was not a valid choice!',
-                }]
-            )
+    try:
+        choice = _get_choice(index)
         replies = play(g.client, Playlist(**choice))
+    except (IndexError, KeyError):
+        replies = [{
+            'type': 'text',
+            'content': 'That was not a valid choice!',
+        }]
 
-        return jsonify(
-            status=200,
-            replies=replies,
-        )
+    return jsonify(
+        status=200,
+        replies=replies,
+    )
 
     return _no_match_response()
 
 
 @app.route('/recast/genres', methods=['POST'])
 def genres_command():
-    if (
-        g.top_intent == 'play_random' or
-        g.skill == 'display_genres'
-    ):
-        playlists = Playlist.fetch_random(g.client)
-        return jsonify(
-            status=200,
-            replies=recast.buttons_for(playlists),
-            conversation={
-              'memory': {
-                'choices': [{
-                    'p_id': pl.id,
-                    'url': pl.url,
-                } for pl in playlists]
-              }
-            }
-        )
+    playlists = Playlist.fetch_random(g.client)
+    return jsonify(
+        status=200,
+        replies=recast.buttons_for(playlists),
+        conversation={
+          'memory': {
+            'choices': [{
+                'p_id': pl.id,
+                'url': pl.url,
+            } for pl in playlists]
+          }
+        }
+    )
 
     return _no_match_response()
 
