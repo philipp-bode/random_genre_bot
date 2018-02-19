@@ -55,19 +55,6 @@ def attach_nlp():
             g.top_intent = ''
 
 
-def _no_match_response():
-    return jsonify(
-        status=200,
-        replies=[{
-            'type': 'text',
-            'content': (
-                f"I don't know what to say. :("
-                f"You want {g.top_intent} while we're in {g.skill}?"
-            ),
-        }]
-    )
-
-
 @app.route('/genres', methods=['GET'])
 def test():
     genres = {str(i + 1): v for i, v in enumerate(sample(GENRES, 3))}
@@ -107,8 +94,6 @@ def play_command():
         **response
     )
 
-    return _no_match_response()
-
 
 @app.route('/recast/genres', methods=['POST'])
 def genres_command():
@@ -126,7 +111,11 @@ def genres_command():
         }
     )
 
-    return _no_match_response()
+
+@app.route('/recast/pause', methods=['POST'])
+def pause_command():
+    g.client.pause_playback()
+    return jsonify(status=200)
 
 
 @app.route('/', methods=['POST'])
