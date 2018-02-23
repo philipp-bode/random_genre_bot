@@ -68,7 +68,7 @@ def play_command():
     try:
         choice = Playlist(**_get_choice(index))
         g.client.start_playback(context_uri=choice.context_uri)
-        return recast.playing(choice, g.memory)
+        response = recast.playing(choice, g.memory)
     except (IndexError, KeyError):
         response = {'replies': [{
             'type': 'text',
