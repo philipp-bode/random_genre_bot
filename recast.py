@@ -58,3 +58,15 @@ def spotify_login(url):
     #         }]
     #     }
     # }
+
+
+def playing(playlist, memory):
+    return {
+        'replies': [{
+            'type': 'text',
+            'content': f"Playing '{playlist.name}'. Enjoy! ({playlist.url})",
+        }],
+        'conversation': {
+          'memory': {'currently_playing': {**playlist}, **memory}
+        },
+    }

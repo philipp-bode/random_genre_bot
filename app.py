@@ -1,10 +1,9 @@
 import os
 from flask import Flask, jsonify, g, redirect, request
-from random import sample
 from spotipy import oauth2, Spotify
 
 import recast
-from genres import GENRES, play, Playlist
+from genres import Playlist
 
 app = Flask(__name__)
 
@@ -55,21 +54,6 @@ def attach_nlp():
             g.top_intent = ''
 
 
-@app.route('/genres', methods=['GET'])
-def test():
-    genres = {str(i + 1): v for i, v in enumerate(sample(GENRES, 3))}
-
-    return jsonify(
-        status=200,
-        replies=[recast.list_for(g.client, genres)],
-        conversation={
-          'memory': {
-            'choices': genres
-          }
-        }
-    )
-
-
 def _get_choice(memory):
     selection = g.memory['user_choice']
     choices = g.memory['choices']
@@ -83,7 +67,8 @@ def _get_choice(memory):
 def play_command():
     try:
         choice = Playlist(**_get_choice(index))
-        response = play(g.client, choice)
+        g.client.start_playback(context_uri=choice.context_uri)
+        return recast.playing(choice, g.memory)
     except (IndexError, KeyError):
         response = {'replies': [{
             'type': 'text',
@@ -103,10 +88,7 @@ def genres_command():
         replies=recast.buttons_for(playlists),
         conversation={
           'memory': {
-            'choices': [{
-                'p_id': pl.id,
-                'url': pl.url,
-            } for pl in playlists]
+            'choices': [{**pl} for pl in playlists]
           }
         }
     )
