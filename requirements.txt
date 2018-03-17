@@ -1,3 +1,4 @@
-Flask
+falcon
 gunicorn
 git+git://github.com/plamere/spotipy.git@master
+ujson
