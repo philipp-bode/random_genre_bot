@@ -167,8 +167,9 @@ if __name__ == '__main__':
     dispatcher_process = multiprocessing.Process(target=dp.start)
     dispatcher_process.start()
     app.run(
-        debug=True,
+        host='0.0.0.0',
         port=PORT,
+        debug=True,
     )
 
     s = bot.set_webhook(
