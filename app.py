@@ -5,9 +5,9 @@ import time
 
 import telegram
 from flask import Flask, jsonify, g, redirect, request
-from spotipy import oauth2, Spotify
 
 import recast
+from authorization import _get_oauth
 from telegram_app import RandomGenreBot
 from genres import Playlist
 
@@ -38,16 +38,6 @@ def errors(error):
 
 
 dispatcher.add_error_handler(errors)
-
-
-def _get_oauth(user=None):
-    cache_path = CACHE_PATH.format(user=user)
-    redirect_uri = f'{request.host_url}callback'
-
-    return oauth2.SpotifyOAuth(
-        CLIENT_ID, CLIENT_SECRET, redirect_uri,
-        scope=scope, cache_path=cache_path
-    )
 
 
 # @app.before_request
