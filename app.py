@@ -1,5 +1,6 @@
+import queue
 import os
-import multiprocessing
+import threading
 
 import telegram
 from flask import Flask, jsonify, g, redirect, request
@@ -25,10 +26,10 @@ CACHE_PATH = '.cache-{user}'
 PORT = os.environ.get('PORT', 5000)
 
 bot = RandomGenreBot.bot()
-update_queue = multiprocessing.Queue()
-dp = telegram.ext.Dispatcher(bot, update_queue)
+update_queue = queue.Queue()
+dispatcher = telegram.ext.Dispatcher(bot, update_queue)
 for handler in RandomGenreBot.handlers():
-    dp.add_handler(handler)
+    dispatcher.add_handler(handler)
 
 
 def _get_oauth(user=None):
@@ -119,6 +120,11 @@ def index():
     return jsonify(status=200)
 
 
+@app.route('/', methods=['GET'])
+def redirect_to_bot():
+    return redirect("https://telegram.me/random_genre_bot", code=302)
+
+
 @app.route('/errors', methods=['POST'])
 def errors():
     print(request.get_json())
@@ -149,31 +155,26 @@ def callback():
     # return jsonify(status=200)
 
 
-@app.route('/hook/' + RandomGenreBot.TOKEN, methods=['GET', 'POST'])
+@app.route('/hook/' + RandomGenreBot.TOKEN, methods=['POST'])
 def webhook():
-    if request.method == "POST":
-        # retrieve the message in JSON and then transform it to Telegram object
-        update = telegram.Update.de_json(request.get_json(force=True))
-
-        dp.process_update(update)
-        update_queue.put(update)
-        return "OK"
-    else:
-        return redirect("https://telegram.me/random_genre_bot", code=302)
+    update = telegram.Update.de_json(request.get_json(force=True), bot)
+    update_queue.put(update)
+    return "OK"
 
 
 if __name__ == '__main__':
 
-    dispatcher_process = multiprocessing.Process(target=dp.start)
-    dispatcher_process.start()
+    dispatcher_thread = threading.Thread(target=dispatcher.start)
+    dispatcher_thread.start()
+    s = bot.set_webhook(
+        "https://random-genre.herokuapp.com/hook/" + RandomGenreBot.TOKEN)
+
     app.run(
         host='0.0.0.0',
         port=PORT,
         debug=True,
     )
 
-    s = bot.set_webhook(
-        "https://random-genre.herokuapp.com/hook/" + RandomGenreBot.TOKEN)
     if s:
         print("webhook setup ok")
     else:
