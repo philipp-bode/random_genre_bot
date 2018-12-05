@@ -17,6 +17,8 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO)
 
+logger = logging.getLogger(__name__)
+
 
 class RandomGenreBot:
 
@@ -28,6 +30,7 @@ class RandomGenreBot:
 
     @staticmethod
     def force_authorization(bot, update):
+        logger.info('Executing: force_authorization')
         chat_id = update.message.chat_id
         auth_url = get_client_or_auth_url(chat_id, force_reauth=True)
         bot.send_message(
@@ -35,6 +38,7 @@ class RandomGenreBot:
 
     @staticmethod
     def _get_authorized_client(bot, update):
+        logger.info('Executing: _get_authorized_client')
         chat_id = update.message.chat_id
         client_or_url = get_client_or_auth_url(chat_id)
         if not isinstance(client_or_url, str):
@@ -47,6 +51,7 @@ class RandomGenreBot:
 
     @staticmethod
     def pause(bot, update):
+        logger.info('Executing: pause')
         client = RandomGenreBot._get_authorized_client(bot, update)
         if client:
             client.pause_playback()
@@ -55,6 +60,7 @@ class RandomGenreBot:
 
     @staticmethod
     def play(bot, update):
+        logger.info('Executing: play')
         client = RandomGenreBot._get_authorized_client(bot, update)
         if client:
             client.start_playback()
@@ -63,6 +69,7 @@ class RandomGenreBot:
 
     @staticmethod
     def genres(bot, update, chat_data):
+        logger.info('Executing: genres')
         client = RandomGenreBot._get_authorized_client(bot, update)
         if client:
             playlists = Playlist.fetch_random(client)
@@ -82,6 +89,7 @@ class RandomGenreBot:
 
     @staticmethod
     def choose(bot, update, chat_data):
+        logger.info('Executing: choose')
         client = RandomGenreBot._get_authorized_client(bot, update)
         choice = int(update.message.text) - 1
         if client and 'playlists' in chat_data:
