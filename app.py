@@ -50,31 +50,31 @@ def _get_oauth(user=None):
     )
 
 
-@app.before_request
-def get_client():
-    if request.method == 'POST' or request.endpoint == 'test':
-        sp_oauth = _get_oauth()
-        token_info = sp_oauth.get_cached_token()
-        if not token_info:
-            return jsonify(
-                status=200,
-                replies=recast.spotify_login(sp_oauth.get_authorize_url())
-            )
-        else:
-            g.client = Spotify(auth=token_info['access_token'])
+# @app.before_request
+# def get_client():
+#     if request.method == 'POST' or request.endpoint == 'test':
+#         sp_oauth = _get_oauth()
+#         token_info = sp_oauth.get_cached_token()
+#         if not token_info:
+#             return jsonify(
+#                 status=200,
+#                 replies=recast.spotify_login(sp_oauth.get_authorize_url())
+#             )
+#         else:
+#             g.client = Spotify(auth=token_info['access_token'])
 
 
-@app.before_request
-def attach_nlp():
-    if request.method == 'POST':
-        state = request.get_json()
-        print(state)
-        g.skill = state['conversation']['skill']
-        g.memory = state['conversation']['memory']
-        try:
-            g.top_intent = state['nlp']['intents'][0]['slug']
-        except (IndexError, KeyError):
-            g.top_intent = ''
+# @app.before_request
+# def attach_nlp():
+#     if request.method == 'POST':
+#         state = request.get_json()
+#         print(state)
+#         g.skill = state['conversation']['skill']
+#         g.memory = state['conversation']['memory']
+#         try:
+#             g.top_intent = state['nlp']['intents'][0]['slug']
+#         except (IndexError, KeyError):
+#             g.top_intent = ''
 
 
 def _get_choice(memory):
