@@ -1,9 +1,14 @@
 import os
+import multiprocessing
+
+import telegram
 from flask import Flask, jsonify, g, redirect, request
 from spotipy import oauth2, Spotify
 
 import recast
+from telegram_app import RandomGenreBot
 from genres import Playlist
+
 
 app = Flask(__name__)
 
@@ -15,15 +20,20 @@ scope = (
 
 CLIENT_ID = os.getenv('SPOTIPY_CLIENT_ID')
 CLIENT_SECRET = os.getenv('SPOTIPY_CLIENT_SECRET')
-CACHE_PATH = f".cache-{os.getenv('SPOTIPY_USERNAME')}"
+CACHE_PATH = '.cache-{user}'
+
+bot = RandomGenreBot.bot()
+update_queue = multiprocessing.Queue()
+dp = telegram.ext.Dispatcher(bot, update_queue)
 
 
-def _get_oauth():
+def _get_oauth(user=None):
+    cache_path = CACHE_PATH.format(user=user)
     redirect_uri = f'{request.host_url}callback'
 
     return oauth2.SpotifyOAuth(
         CLIENT_ID, CLIENT_SECRET, redirect_uri,
-        scope=scope, cache_path=CACHE_PATH
+        scope=scope, cache_path=cache_path
     )
 
 
@@ -113,7 +123,8 @@ def errors():
 
 @app.route('/login', methods=['GET'])
 def login():
-    sp_oauth = _get_oauth()
+    user = request.args.get('user')
+    sp_oauth = _get_oauth(user)
     token_info = sp_oauth.get_cached_token()
 
     if not token_info:
@@ -125,11 +136,37 @@ def login():
 
 @app.route('/callback', methods=['GET'])
 def callback():
-    sp_oauth = _get_oauth()
+    user = request.args.get('state')
+    sp_oauth = _get_oauth(user)
+
     code = request.args.get('code')
     token_info = sp_oauth.get_access_token(code)
     return jsonify(status=200, token_expires=token_info['expires_at'])
+    # return jsonify(status=200)
+
+
+@app.route('/hook/' + RandomGenreBot.TOKEN, methods=['GET', 'POST'])
+def webhook():
+    if request.method == "POST":
+        # retrieve the message in JSON and then transform it to Telegram object
+        update = telegram.Update.de_json(request.get_json(force=True))
+
+        dp.process_update(update)
+        update_queue.put(update)
+        return "OK"
+    else:
+        return redirect("https://telegram.me/random_genre_bot", code=302)
 
 
 if __name__ == '__main__':
+
+    dispatcher_process = multiprocessing.Process(target=dp.start)
+    dispatcher_process.start()
     app.run(debug=True)
+
+    s = bot.set_webhook(
+        "https://random-genre.herokuapp.com/hook/" + RandomGenreBot.TOKEN)
+    if s:
+        print("webhook setup ok")
+    else:
+        print("webhook setup failed")

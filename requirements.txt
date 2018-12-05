@@ -1,3 +1,4 @@
 Flask
 gunicorn
 git+git://github.com/plamere/spotipy.git@master
+python-telegram-bot==11.1.0
