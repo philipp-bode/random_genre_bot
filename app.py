@@ -33,6 +33,13 @@ for handler in RandomGenreBot.handlers():
     dispatcher.add_handler(handler)
 
 
+def errors(error):
+    print(error)
+
+
+dispatcher.add_error_handler(errors)
+
+
 def _get_oauth(user=None):
     cache_path = CACHE_PATH.format(user=user)
     redirect_uri = f'{request.host_url}callback'
