@@ -25,6 +25,8 @@ CACHE_PATH = '.cache-{user}'
 bot = RandomGenreBot.bot()
 update_queue = multiprocessing.Queue()
 dp = telegram.ext.Dispatcher(bot, update_queue)
+for handler in RandomGenreBot.handlers():
+    dp.add_handler(handler)
 
 
 def _get_oauth(user=None):
