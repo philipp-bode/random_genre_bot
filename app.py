@@ -1,6 +1,7 @@
-import queue
+# import queue
 import os
-import threading
+# import threading
+import time
 
 import telegram
 from flask import Flask, jsonify, g, redirect, request
@@ -26,8 +27,8 @@ CACHE_PATH = '.cache-{user}'
 PORT = os.environ.get('PORT', 5000)
 
 bot = RandomGenreBot.bot()
-update_queue = queue.Queue()
-dispatcher = telegram.ext.Dispatcher(bot, update_queue)
+# update_queue = queue.Queue()
+dispatcher = telegram.ext.Dispatcher(bot, None, workers=0)
 for handler in RandomGenreBot.handlers():
     dispatcher.add_handler(handler)
 
@@ -158,24 +159,24 @@ def callback():
 @app.route('/hook/' + RandomGenreBot.TOKEN, methods=['POST'])
 def webhook():
     update = telegram.Update.de_json(request.get_json(force=True), bot)
-    update_queue.put(update)
+    # update_queue.put(update)
+    dispatcher.process_update(update)
     return "OK"
 
 
 if __name__ == '__main__':
 
-    dispatcher_thread = threading.Thread(target=dispatcher.start)
-    dispatcher_thread.start()
+    # dispatcher_thread = threading.Thread(target=dispatcher.start)
+    # dispatcher_thread.start()
     s = bot.set_webhook(
         "https://random-genre.herokuapp.com/hook/" + RandomGenreBot.TOKEN)
-
+    if s:
+        print("webhook setup ok")
+    else:
+        print("webhook setup failed")
+    time.sleep(5)
     app.run(
         host='0.0.0.0',
         port=PORT,
         debug=True,
     )
-
-    if s:
-        print("webhook setup ok")
-    else:
-        print("webhook setup failed")
