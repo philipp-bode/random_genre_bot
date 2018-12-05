@@ -22,6 +22,8 @@ CLIENT_ID = os.getenv('SPOTIPY_CLIENT_ID')
 CLIENT_SECRET = os.getenv('SPOTIPY_CLIENT_SECRET')
 CACHE_PATH = '.cache-{user}'
 
+PORT = os.environ.get('PORT', 5000)
+
 bot = RandomGenreBot.bot()
 update_queue = multiprocessing.Queue()
 dp = telegram.ext.Dispatcher(bot, update_queue)
@@ -164,7 +166,10 @@ if __name__ == '__main__':
 
     dispatcher_process = multiprocessing.Process(target=dp.start)
     dispatcher_process.start()
-    app.run(debug=True)
+    app.run(
+        debug=True,
+        port=PORT,
+    )
 
     s = bot.set_webhook(
         "https://random-genre.herokuapp.com/hook/" + RandomGenreBot.TOKEN)
