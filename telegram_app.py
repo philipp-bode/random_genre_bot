@@ -107,8 +107,10 @@ class RandomGenreBot:
             CommandHandler('authorize', RandomGenreBot.force_authorization),
             CommandHandler('pause', RandomGenreBot.pause),
             CommandHandler('play', RandomGenreBot.play),
-            CommandHandler('genres', RandomGenreBot.genres, pass_chat_data=True),
-            MessageHandler(Filters.text, RandomGenreBot.choose, pass_chat_data=True),
+            CommandHandler(
+                'genres', RandomGenreBot.genres, pass_chat_data=True),
+            MessageHandler(
+                Filters.text, RandomGenreBot.choose, pass_chat_data=True),
         )
 
 
