@@ -1,6 +1,5 @@
-# import queue
+import multiprocessing
 import os
-# import threading
 import time
 
 import telegram
@@ -19,10 +18,11 @@ app = Flask(__name__)
 
 
 PORT = os.environ.get('PORT', 5000)
+API_LOCATION = os.environ.get('API_LOCATION')
 
 bot = RandomGenreBot.bot()
-# update_queue = queue.Queue()
-dispatcher = telegram.ext.Dispatcher(bot, None, workers=0)
+update_queue = multiprocessing.Queue()
+dispatcher = telegram.ext.Dispatcher(bot, update_queue)
 for handler in RandomGenreBot.handlers():
     dispatcher.add_handler(handler)
 
@@ -44,30 +44,29 @@ def callback():
 
     code = request.args.get('code')
     token_info = sp_oauth.get_access_token(code)
-    return jsonify(status=200, token_expires=token_info['expires_at'])
+    return jsonify(
+        status=200, msg='Successfully logged in. Go talk to the bot!',
+        token_expires=token_info['expires_at']
+    )
 
 
 @app.route('/hook/' + RandomGenreBot.TOKEN, methods=['POST'])
 def webhook():
     update = telegram.Update.de_json(request.get_json(force=True), bot)
-    # update_queue.put(update)
-    dispatcher.process_update(update)
+    update_queue.put(update)
     return "OK"
 
 
 if __name__ == '__main__':
 
-    # dispatcher_thread = threading.Thread(target=dispatcher.start)
-    # dispatcher_thread.start()
-    s = bot.set_webhook(
-        "https://random-genre.herokuapp.com/hook/" + RandomGenreBot.TOKEN)
-    if s:
-        print("webhook setup ok")
-    else:
-        print("webhook setup failed")
-    time.sleep(5)
+    if API_LOCATION:
+        dispatcher_process = multiprocessing.Process(target=dispatcher.start)
+        dispatcher_process.start()
+        s = bot.set_webhook(
+            f'{API_LOCATION}/hook/{RandomGenreBot.TOKEN}')
+        time.sleep(5)
     app.run(
         host='0.0.0.0',
         port=PORT,
-        debug=True,
+        debug=not bool(API_LOCATION),
     )
