@@ -48,9 +48,9 @@ class RandomGenreBot:
     if not TOKEN:
         raise RuntimeError('Please set TELEGRAM_TOKEN in your environment.')
 
-    @staticmethod
-    def bot():
-        return telegram.Bot(RandomGenreBot.TOKEN)
+    @classmethod
+    def bot(cls):
+        return telegram.Bot(cls.TOKEN)
 
     @staticmethod
     def force_authorization(bot, update):
@@ -109,16 +109,15 @@ class RandomGenreBot:
                 text=f'Now listening to: {chosen_pl.name}'
             )
 
-    @staticmethod
-    def handlers():
+    @classmethod
+    def handlers(cls):
         return (
-            CommandHandler('authorize', RandomGenreBot.force_authorization),
-            CommandHandler('pause', RandomGenreBot.pause),
-            CommandHandler('play', RandomGenreBot.play),
-            CommandHandler(
-                'genres', RandomGenreBot.genres, pass_chat_data=True),
-            MessageHandler(
-                Filters.text, RandomGenreBot.choose, pass_chat_data=True),
+            CommandHandler('authorize', cls.force_authorization),
+            CommandHandler('start', cls.force_authorization),
+            CommandHandler('pause', cls.pause),
+            CommandHandler('play', cls.play),
+            CommandHandler('genres', cls.genres, pass_chat_data=True),
+            MessageHandler(Filters.text, cls.choose, pass_chat_data=True),
         )
 
 
