@@ -6,7 +6,7 @@ CLIENT_ID = os.getenv('SPOTIPY_CLIENT_ID')
 CLIENT_SECRET = os.getenv('SPOTIPY_CLIENT_SECRET')
 CACHE_PATH = ".cache-{user}"
 
-REDIS_CONNECTION = {'host': os.getenv('REDIS_URL', 'localhost')}
+REDIS_URL = os.getenv('REDIS_URL', 'localhost')
 
 API_LOCATION = os.getenv('API_LOCATION', 'http://localhost:5000')
 
@@ -34,7 +34,7 @@ def _get_oauth(user):
 
     return oauth2.SpotifyOAuth(
         CLIENT_ID, CLIENT_SECRET, redirect_uri,
-        scope=SCOPE, cache_path=cache_path, cache_store=REDIS_CONNECTION
+        scope=SCOPE, cache_path=cache_path, cache_store=REDIS_URL
     )
 
 
