@@ -11,7 +11,7 @@ from flask import (
 )
 
 from authorization import _get_oauth
-from telegram_app import RandomGenreBot
+from bots import RandomGenreBot
 
 
 app = Flask(__name__)

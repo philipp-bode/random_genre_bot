@@ -6,6 +6,8 @@ CLIENT_ID = os.getenv('SPOTIPY_CLIENT_ID')
 CLIENT_SECRET = os.getenv('SPOTIPY_CLIENT_SECRET')
 CACHE_PATH = ".cache-{user}"
 
+REDIS_CONNECTION = {'host': os.getenv('REDIS_URL', 'localhost')}
+
 API_LOCATION = os.getenv('API_LOCATION', 'http://localhost:5000')
 
 SCOPE = (
@@ -15,13 +17,24 @@ SCOPE = (
 )
 
 
+class SpotifyClientProxy:
+    def __init__(self, objs):
+        self._objs = objs
+
+    def __getattr__(self, name):
+        def func(*args, **kwargs):
+            return SpotifyClientProxy(
+                [getattr(o, name)(*args, **kwargs) for o in self._objs])
+        return func
+
+
 def _get_oauth(user):
-    cache_path = CACHE_PATH.format(user=user)
+    cache_path = CACHE_PATH.format(user=user) if user else None
     redirect_uri = f'{API_LOCATION}/callback'
 
     return oauth2.SpotifyOAuth(
         CLIENT_ID, CLIENT_SECRET, redirect_uri,
-        scope=SCOPE, cache_path=cache_path
+        scope=SCOPE, cache_path=cache_path, cache_store=REDIS_CONNECTION
     )
 
 
