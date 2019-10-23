@@ -10,6 +10,7 @@ from genres import Playlist
 from spotify_telegram_bot import (
     SpotifyTelegramBot,
     spotify_action,
+    spotify_multi_action,
 )
 
 
@@ -34,7 +35,7 @@ class RandomGenreBot(SpotifyTelegramBot):
         )
 
     @staticmethod
-    @spotify_action
+    @spotify_multi_action
     def choose(client, bot, update, chat_data):
         try:
             choice = int(update.message.text)
