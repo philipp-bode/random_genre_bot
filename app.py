@@ -10,7 +10,7 @@ from flask import (
     request,
 )
 
-from authorization import _get_oauth
+from authorization import retrieve_token_info
 from bots import RandomGenreBot
 
 
@@ -20,10 +20,12 @@ app = Flask(__name__)
 PORT = os.environ.get('PORT', 5000)
 API_LOCATION = os.environ.get('API_LOCATION')
 
-bot = RandomGenreBot.bot()
+BOT_CLASS = RandomGenreBot
+
+bot = BOT_CLASS.bot()
 update_queue = multiprocessing.Queue()
 dispatcher = telegram.ext.Dispatcher(bot, update_queue)
-for handler in RandomGenreBot.handlers():
+for handler in BOT_CLASS.handlers():
     dispatcher.add_handler(handler)
 
 
@@ -39,18 +41,18 @@ def redirect_to_bot():
 
 @app.route('/callback', methods=['GET'])
 def callback():
-    user = request.args.get('state')
-    sp_oauth = _get_oauth(user)
-
-    code = request.args.get('code')
-    token_info = sp_oauth.get_access_token(code)
-    return jsonify(
-        status=200, msg='Successfully logged in. Go talk to the bot!',
-        token_expires=token_info['expires_at']
+    token_info, context = retrieve_token_info(
+        request.args.get('state'),
+        request.args.get('code')
     )
+    bot.send_message(
+        chat_id=context['chat_id'],
+        text=f"User '{context['user_id']}' synced."
+    )
+    return redirect("https://telegram.me/random_genre_bot", code=302)
 
 
-@app.route('/hook/' + RandomGenreBot.TOKEN, methods=['POST'])
+@app.route('/hook/' + BOT_CLASS.TOKEN, methods=['POST'])
 def webhook():
     update = telegram.Update.de_json(request.get_json(force=True), bot)
     update_queue.put(update)
@@ -63,7 +65,7 @@ if __name__ == '__main__':
         dispatcher_process = multiprocessing.Process(target=dispatcher.start)
         dispatcher_process.start()
         s = bot.set_webhook(
-            f'{API_LOCATION}/hook/{RandomGenreBot.TOKEN}')
+            f'{API_LOCATION}/hook/{BOT_CLASS.TOKEN}')
         time.sleep(5)
     app.run(
         host='0.0.0.0',

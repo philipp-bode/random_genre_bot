@@ -7,21 +7,21 @@ from telegram.ext import (
 
 from spotify_telegram_bot import (
     SpotifyTelegramBot,
-    spotify_action,
+    spotify_multi_action,
 )
 
 
 class ListenTogetherBot(SpotifyTelegramBot):
 
     @staticmethod
-    @spotify_action
+    @spotify_multi_action
     def select(client, bot, update, chat_data):
 
         text = update.message.text
 
         if text.startswith('https://open.spotify.com/'):
             try:
-                track = client.track(text)
+                track = client.newest.track(text)
                 uri = track['uri']
             except SpotifyException:
                 uri = None
@@ -30,16 +30,15 @@ class ListenTogetherBot(SpotifyTelegramBot):
         else:
             uri = None
 
-        client.start_playback(
-            uris=[uri])
+        client.start_playback(uris=[uri])
         bot.send_message(
             chat_id=update.message.chat_id,
             text=f'Now listening to: {uri}'
         )
 
     @classmethod
-    def handlers(cls):
-        return super().handlers() + (
+    def custom_handlers(cls):
+        return (
             MessageHandler(Filters.text, cls.select, pass_chat_data=True),
         )
 
