@@ -37,12 +37,14 @@ class RandomGenreBot(SpotifyTelegramBot):
     @spotify_action
     def choose(client, bot, update, chat_data):
         try:
-            choice = int(update.message.text) - 1
+            choice = int(update.message.text)
         except ValueError:
             choice = None
 
+        print(f'Choice is: {choice}')
+
         if choice and 'playlists' in chat_data:
-            chosen_pl = chat_data['playlists'][choice]
+            chosen_pl = chat_data['playlists'][choice - 1]
             client.start_playback(
                 context_uri=chosen_pl.context_uri)
             bot.send_message(
@@ -51,8 +53,8 @@ class RandomGenreBot(SpotifyTelegramBot):
             )
 
     @classmethod
-    def handlers(cls):
-        return super().handlers() + (
+    def custom_handlers(cls):
+        return (
             CommandHandler('genres', cls.genres, pass_chat_data=True),
             MessageHandler(Filters.text, cls.choose, pass_chat_data=True),
         )

@@ -1,12 +1,13 @@
 import logging
 import os
 from functools import wraps
+from typing import List
 
 import telegram
-from spotipy.client import SpotifyException
+from spotipy.client import Spotify, SpotifyException
 from telegram.ext import CommandHandler
 
-from authorization import get_client_or_auth_url
+from authorization import get_clients_or_auth_url
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -15,26 +16,58 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def spotify_action(func):
+class SpotifyClientProxy:
 
-    @wraps(func)
-    def returnfunction(bot, update, *args, **kwargs):
+    def __init__(self, clients: List[Spotify]):
+        self._clients = clients
 
-        chat_id = update.message.chat_id
-        client_or_url = get_client_or_auth_url(chat_id)
-        if isinstance(client_or_url, str):
-            bot.send_message(
-                chat_id=chat_id, text="You'll have to log in first:")
-            bot.send_message(
-                chat_id=chat_id, text=client_or_url)
+    @property
+    def newest(self):
+        return self._clients[-1]
+
+    def __getattr__(self, name):
+        if len(self._clients) > 1:
+            def func(*args, **kwargs):
+                return [
+                    getattr(o, name)(*args, **kwargs)
+                    for o in self._clients
+                ]
+            return func
         else:
-            try:
-                logger.info(f'Executing: {func.__name__}')
-                return func(client_or_url, bot, update, *args, **kwargs)
-            except SpotifyException as e:
-                bot.send_message(chat_id=chat_id, text=e.msg)
+            return getattr(self.newest, name)
 
-    return returnfunction
+
+def _spotify_decorator(multi_client=False):
+
+    def decorator(func):
+        @wraps(func)
+        def returnfunction(bot, update, *args, **kwargs):
+
+            chat_id = update.message.chat_id
+            clients, auth_url = get_clients_or_auth_url(
+                chat_id)
+            if clients is None:
+                bot.send_message(
+                    chat_id=chat_id, text="You'll have to log in first:")
+                bot.send_message(
+                    chat_id=chat_id, text=auth_url)
+            else:
+                client = (
+                    SpotifyClientProxy(clients) if multi_client
+                    else SpotifyClientProxy(clients[-1:])
+                )
+                try:
+                    logger.info(f'Executing: {func.__name__}')
+                    return func(client, bot, update, *args, **kwargs)
+                except SpotifyException as e:
+                    bot.send_message(chat_id=chat_id, text=e.msg)
+
+        return returnfunction
+    return decorator
+
+
+spotify_action = _spotify_decorator(multi_client=False)
+spotify_multi_action = _spotify_decorator(multi_client=True)
 
 
 class SpotifyTelegramBot:
@@ -50,23 +83,28 @@ class SpotifyTelegramBot:
     @staticmethod
     def force_authorization(bot, update):
         chat_id = update.message.chat_id
-        auth_url = get_client_or_auth_url(chat_id, force_reauth=True)
+        _, auth_url = get_clients_or_auth_url(
+            chat_id, force_reauth=True)
         bot.send_message(
             chat_id=chat_id, text=auth_url)
 
     @staticmethod
-    @spotify_action
+    @spotify_multi_action
     def pause(client, bot, update):
         client.pause_playback()
         bot.send_message(
             chat_id=update.message.chat_id, text='I paused your playback.')
 
     @staticmethod
-    @spotify_action
+    @spotify_multi_action
     def play(client, bot, update):
         client.start_playback()
         bot.send_message(
             chat_id=update.message.chat_id, text='Playing again...')
+
+    @classmethod
+    def custom_handlers(cls):
+        return []
 
     @classmethod
     def handlers(cls):
@@ -75,4 +113,5 @@ class SpotifyTelegramBot:
             CommandHandler('start', cls.force_authorization),
             CommandHandler('pause', cls.pause),
             CommandHandler('play', cls.play),
+            *cls.custom_handlers(),
         )
