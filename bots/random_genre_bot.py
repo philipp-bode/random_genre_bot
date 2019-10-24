@@ -36,7 +36,7 @@ class RandomGenreBot(SpotifyTelegramBot):
 
     @staticmethod
     @spotify_multi_action
-    def choose(client, bot, update, chat_data):
+    def choose(multi_client, bot, update, chat_data):
         try:
             choice = int(update.message.text)
         except ValueError:
@@ -46,7 +46,7 @@ class RandomGenreBot(SpotifyTelegramBot):
 
         if choice and 'playlists' in chat_data:
             chosen_pl = chat_data['playlists'][choice - 1]
-            client.start_playback(
+            multi_client.start_playback(
                 context_uri=chosen_pl.context_uri)
             bot.send_message(
                 chat_id=update.message.chat_id,

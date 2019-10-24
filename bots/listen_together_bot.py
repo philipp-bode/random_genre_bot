@@ -15,13 +15,13 @@ class ListenTogetherBot(SpotifyTelegramBot):
 
     @staticmethod
     @spotify_multi_action
-    def select(client, bot, update, chat_data):
+    def select(multi_client, bot, update, chat_data):
 
         text = update.message.text
 
         if text.startswith('https://open.spotify.com/'):
             try:
-                track = client.newest.track(text)
+                track = multi_client.newest.track(text)
                 uri = track['uri']
             except SpotifyException:
                 uri = None
@@ -30,7 +30,7 @@ class ListenTogetherBot(SpotifyTelegramBot):
         else:
             uri = None
 
-        client.start_playback(uris=[uri])
+        multi_client.start_playback(uris=[uri])
         bot.send_message(
             chat_id=update.message.chat_id,
             text=f'Now listening to: {uri}'

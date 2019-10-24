@@ -90,15 +90,15 @@ class SpotifyTelegramBot:
 
     @staticmethod
     @spotify_multi_action
-    def pause(client, bot, update):
-        client.pause_playback()
+    def pause(multi_client, bot, update):
+        multi_client.pause_playback()
         bot.send_message(
             chat_id=update.message.chat_id, text='I paused your playback.')
 
     @staticmethod
     @spotify_multi_action
-    def play(client, bot, update):
-        client.start_playback()
+    def play(multi_client, bot, update):
+        multi_client.start_playback()
         bot.send_message(
             chat_id=update.message.chat_id, text='Playing again...')
 
