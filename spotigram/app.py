@@ -10,7 +10,7 @@ from flask import (
     request,
 )
 
-from authorization import retrieve_token_info
+from spotigram.authorization import retrieve_token_info
 from bots import RandomGenreBot
 
 

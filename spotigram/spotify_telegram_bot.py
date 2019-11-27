@@ -7,7 +7,7 @@ import telegram
 from spotipy.client import Spotify, SpotifyException
 from telegram.ext import CommandHandler
 
-from authorization import get_clients_or_auth_url
+from spotigram.authorization import get_clients_or_auth_url
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',

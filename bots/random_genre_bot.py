@@ -7,7 +7,7 @@ from telegram.ext import (
 )
 
 from genres import Playlist
-from spotify_telegram_bot import (
+from spotigram.spotify_telegram_bot import (
     SpotifyTelegramBot,
     spotify_action,
     spotify_multi_action,

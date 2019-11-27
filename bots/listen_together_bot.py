@@ -5,7 +5,7 @@ from telegram.ext import (
     MessageHandler,
 )
 
-from spotify_telegram_bot import (
+from spotigram.spotify_telegram_bot import (
     SpotifyTelegramBot,
     spotify_multi_action,
 )
