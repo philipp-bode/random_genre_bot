@@ -1,1 +1,1 @@
-web: python spotigram/app.py
+web: ./run.sh

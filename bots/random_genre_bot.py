@@ -42,15 +42,15 @@ class RandomGenreBot(SpotifyTelegramBot):
         except ValueError:
             choice = None
 
-        print(f'Choice is: {choice}')
-
         if choice and 'playlists' in chat_data:
             chosen_pl = chat_data['playlists'][choice - 1]
             multi_client.start_playback(
                 context_uri=chosen_pl.context_uri)
+            reply_markup = telegram.ReplyKeyboardRemove()
             bot.send_message(
                 chat_id=update.message.chat_id,
-                text=f'Now listening to: {chosen_pl.name}'
+                text=f'Now listening to: {chosen_pl.name}',
+                reply_markup=reply_markup,
             )
 
     @classmethod

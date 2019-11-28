@@ -7,7 +7,10 @@ import telegram
 from spotipy.client import Spotify, SpotifyException
 from telegram.ext import CommandHandler
 
-from spotigram.authorization import get_clients_or_auth_url
+from spotigram.authorization import (
+    CACHE,
+    get_clients_or_auth_url,
+)
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -22,7 +25,7 @@ class SpotifyClientProxy:
         self._clients = clients
 
     @property
-    def newest(self):
+    def single_client(self):
         return self._clients[-1]
 
     def __getattr__(self, name):
@@ -34,7 +37,7 @@ class SpotifyClientProxy:
                 ]
             return func
         else:
-            return getattr(self.newest, name)
+            return getattr(self.single_client, name)
 
 
 def _spotify_decorator(multi_client=False):
@@ -44,13 +47,15 @@ def _spotify_decorator(multi_client=False):
         def returnfunction(bot, update, *args, **kwargs):
 
             chat_id = update.message.chat_id
-            clients, auth_url = get_clients_or_auth_url(
+            clients, url = get_clients_or_auth_url(
                 chat_id)
             if clients is None:
                 bot.send_message(
-                    chat_id=chat_id, text="You'll have to log in first:")
-                bot.send_message(
-                    chat_id=chat_id, text=auth_url)
+                    chat_id=chat_id,
+                    text=f"[First, log in with your Spotify account]({url})",
+                    parse_mode=telegram.ParseMode.MARKDOWN,
+                    disable_web_page_preview=True,
+                )
             else:
                 client = (
                     SpotifyClientProxy(clients) if multi_client
@@ -70,6 +75,10 @@ spotify_action = _spotify_decorator(multi_client=False)
 spotify_multi_action = _spotify_decorator(multi_client=True)
 
 
+def user_link(user):
+    return f'[{user}](https://open.spotify.com/user/{user})'
+
+
 class SpotifyTelegramBot:
 
     TOKEN = os.environ.get('TELEGRAM_TOKEN')
@@ -86,7 +95,56 @@ class SpotifyTelegramBot:
         _, auth_url = get_clients_or_auth_url(
             chat_id, force_reauth=True)
         bot.send_message(
-            chat_id=chat_id, text=auth_url)
+            chat_id=chat_id,
+            text=f'[Log in with your Spotify account]({auth_url})',
+            parse_mode=telegram.ParseMode.MARKDOWN,
+            disable_web_page_preview=True,
+        )
+
+    @staticmethod
+    def list_users(bot, update):
+        chat_id = update.message.chat_id
+        users_markdown = '\n'.join([
+            user_link(user)
+            for user in CACHE.get_users(chat_id)
+        ])
+        bot.send_message(
+            chat_id=chat_id,
+            text=(
+                f'Authenticated users:\n{users_markdown}'
+                if users_markdown
+                else 'No one logged in :('
+            ),
+            parse_mode=telegram.ParseMode.MARKDOWN,
+            disable_web_page_preview=True,
+        )
+
+    @staticmethod
+    def logout(bot, update, args):
+        chat_id = update.message.chat_id
+        try:
+            user = args.pop(0)
+            logged_out = CACHE.clear(chat_id, user)
+            bot.send_message(
+                chat_id=chat_id,
+                text=(
+                    f'User {user_link(user)} logged out.' if logged_out
+                    else f'No user "{user}" logged in.'
+                ),
+                parse_mode=telegram.ParseMode.MARKDOWN,
+                disable_web_page_preview=True,
+            )
+        except IndexError:
+            bot.send_message(
+                chat_id=chat_id,
+                text='Which user should I log out?',
+            )
+
+    @staticmethod
+    def logout_all(bot, update):
+        chat_id = update.message.chat_id
+        CACHE.clear(chat_id)
+        bot.send_message(chat_id=chat_id, text='Logged out all users.')
 
     @staticmethod
     @spotify_multi_action
@@ -100,7 +158,7 @@ class SpotifyTelegramBot:
     def play(multi_client, bot, update):
         multi_client.start_playback()
         bot.send_message(
-            chat_id=update.message.chat_id, text='Playing again...')
+            chat_id=update.message.chat_id, text='Playing...')
 
     @classmethod
     def custom_handlers(cls):
@@ -109,7 +167,10 @@ class SpotifyTelegramBot:
     @classmethod
     def handlers(cls):
         return (
-            CommandHandler('authorize', cls.force_authorization),
+            CommandHandler('login', cls.force_authorization),
+            CommandHandler('users', cls.list_users),
+            CommandHandler('logout', cls.logout, pass_args=True),
+            CommandHandler('logout_all', cls.logout_all),
             CommandHandler('start', cls.force_authorization),
             CommandHandler('pause', cls.pause),
             CommandHandler('play', cls.play),
