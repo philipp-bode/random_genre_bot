@@ -18,11 +18,29 @@ from spotigram.authorization import (
 API_LOCATION = os.environ.get('API_LOCATION')
 
 
+class classproperty(object):
+    def __init__(self, getter):
+        self.getter = getter
+
+    def __get__(self, instance, owner):
+        return self.getter(owner)
+
+
 class SpotigramBot:
 
-    TOKEN = os.environ.get('TELEGRAM_TOKEN')
-    if not TOKEN:
-        raise RuntimeError('Please set TELEGRAM_TOKEN in your environment.')
+    _TOKEN = None
+
+    @classproperty
+    def TOKEN(cls):
+        if not cls._TOKEN:
+            try:
+                cls._TOKEN = os.environ['TELEGRAM_TOKEN']
+            except KeyError:
+                raise RuntimeError(
+                    f'Please define _TOKEN for {cls.__name__} '
+                    ' or set TELEGRAM_TOKEN in your environment.'
+                )
+        return cls._TOKEN
 
     @classmethod
     def bot(cls):
