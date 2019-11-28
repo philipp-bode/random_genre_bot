@@ -1,17 +1,16 @@
 from spotipy import SpotifyException
 from telegram.ext import (
     Filters,
-    Updater,
     MessageHandler,
 )
 
-from spotigram.spotify_telegram_bot import (
-    SpotifyTelegramBot,
+from spotigram import (
+    SpotigramBot,
     spotify_multi_action,
 )
 
 
-class ListenTogetherBot(SpotifyTelegramBot):
+class ListenTogetherBot(SpotigramBot):
 
     @staticmethod
     @spotify_multi_action
@@ -44,9 +43,4 @@ class ListenTogetherBot(SpotifyTelegramBot):
 
 
 if __name__ == '__main__':
-
-    updater = Updater(token=ListenTogetherBot.TOKEN)
-    dispatcher = updater.dispatcher
-    for handler in ListenTogetherBot.handlers():
-        dispatcher.add_handler(handler)
-    updater.start_polling()
+    ListenTogetherBot.run()
