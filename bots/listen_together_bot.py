@@ -5,7 +5,7 @@ from telegram.ext import (
     MessageHandler,
 )
 
-from spotify_telegram_bot import (
+from spotigram.spotify_telegram_bot import (
     SpotifyTelegramBot,
     spotify_multi_action,
 )
@@ -21,7 +21,7 @@ class ListenTogetherBot(SpotifyTelegramBot):
 
         if text.startswith('https://open.spotify.com/'):
             try:
-                track = multi_client.newest.track(text)
+                track = multi_client.single_client.track(text)
                 uri = track['uri']
             except SpotifyException:
                 uri = None

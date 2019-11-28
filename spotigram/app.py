@@ -10,14 +10,15 @@ from flask import (
     request,
 )
 
-from authorization import retrieve_token_info
+from spotigram.authorization import retrieve_token_info
+from spotigram.spotify_telegram_bot import user_link
 from bots import RandomGenreBot
 
 
 app = Flask(__name__)
 
 
-PORT = os.environ.get('PORT', 5000)
+PORT = os.environ.get('PORT')
 API_LOCATION = os.environ.get('API_LOCATION')
 
 BOT_CLASS = RandomGenreBot
@@ -47,7 +48,9 @@ def callback():
     )
     bot.send_message(
         chat_id=context['chat_id'],
-        text=f"User '{context['user_id']}' synced."
+        text=f"User {user_link(context['user_id'])} logged in.",
+        parse_mode=telegram.ParseMode.MARKDOWN,
+        disable_web_page_preview=True,
     )
     return redirect("https://telegram.me/random_genre_bot", code=302)
 
