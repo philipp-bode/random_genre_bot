@@ -1,1 +1,1 @@
-gunicorn spotigram.app:app --log-file=-
+gunicorn "bots.random_genre_bot:RandomGenreBot.create_app"

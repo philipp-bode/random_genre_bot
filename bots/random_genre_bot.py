@@ -2,19 +2,18 @@ import telegram
 from telegram.ext import (
     CommandHandler,
     Filters,
-    Updater,
     MessageHandler,
 )
 
 from genres import Playlist
-from spotigram.spotify_telegram_bot import (
-    SpotifyTelegramBot,
+from spotigram import (
+    SpotigramBot,
     spotify_action,
     spotify_multi_action,
 )
 
 
-class RandomGenreBot(SpotifyTelegramBot):
+class RandomGenreBot(SpotigramBot):
 
     @staticmethod
     @spotify_action
@@ -62,9 +61,4 @@ class RandomGenreBot(SpotifyTelegramBot):
 
 
 if __name__ == '__main__':
-
-    updater = Updater(token=RandomGenreBot.TOKEN)
-    dispatcher = updater.dispatcher
-    for handler in RandomGenreBot.handlers():
-        dispatcher.add_handler(handler)
-    updater.start_polling()
+    RandomGenreBot.run()

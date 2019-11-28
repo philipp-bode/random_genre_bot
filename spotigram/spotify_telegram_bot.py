@@ -1,85 +1,24 @@
-import logging
 import os
-from functools import wraps
-from typing import List
+import multiprocessing
+import time
 
 import telegram
-from spotipy.client import Spotify, SpotifyException
-from telegram.ext import CommandHandler
+from telegram.ext import (
+    CommandHandler,
+    Updater,
+)
 
+from spotigram import spotify_multi_action
+from spotigram.app import _build_app_and_bot_for, user_link
 from spotigram.authorization import (
     CACHE,
     get_clients_or_auth_url,
 )
 
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO)
-
-logger = logging.getLogger(__name__)
+API_LOCATION = os.environ.get('API_LOCATION')
 
 
-class SpotifyClientProxy:
-
-    def __init__(self, clients: List[Spotify]):
-        self._clients = clients
-
-    @property
-    def single_client(self):
-        return self._clients[-1]
-
-    def __getattr__(self, name):
-        if len(self._clients) > 1:
-            def func(*args, **kwargs):
-                return [
-                    getattr(o, name)(*args, **kwargs)
-                    for o in self._clients
-                ]
-            return func
-        else:
-            return getattr(self.single_client, name)
-
-
-def _spotify_decorator(multi_client=False):
-
-    def decorator(func):
-        @wraps(func)
-        def returnfunction(bot, update, *args, **kwargs):
-
-            chat_id = update.message.chat_id
-            clients, url = get_clients_or_auth_url(
-                chat_id)
-            if clients is None:
-                bot.send_message(
-                    chat_id=chat_id,
-                    text=f"[First, log in with your Spotify account]({url})",
-                    parse_mode=telegram.ParseMode.MARKDOWN,
-                    disable_web_page_preview=True,
-                )
-            else:
-                client = (
-                    SpotifyClientProxy(clients) if multi_client
-                    else SpotifyClientProxy(clients[-1:])
-                )
-                try:
-                    logger.info(f'Executing: {func.__name__}')
-                    return func(client, bot, update, *args, **kwargs)
-                except SpotifyException as e:
-                    bot.send_message(chat_id=chat_id, text=e.msg)
-
-        return returnfunction
-    return decorator
-
-
-spotify_action = _spotify_decorator(multi_client=False)
-spotify_multi_action = _spotify_decorator(multi_client=True)
-
-
-def user_link(user):
-    return f'[{user}](https://open.spotify.com/user/{user})'
-
-
-class SpotifyTelegramBot:
+class SpotigramBot:
 
     TOKEN = os.environ.get('TELEGRAM_TOKEN')
     if not TOKEN:
@@ -88,6 +27,39 @@ class SpotifyTelegramBot:
     @classmethod
     def bot(cls):
         return telegram.Bot(cls.TOKEN)
+
+    @classmethod
+    def run(cls):
+        app, _, _ = _build_app_and_bot_for(cls)
+
+        updater = Updater(token=cls.TOKEN)
+        dispatcher = updater.dispatcher
+        for handler in cls.handlers():
+            dispatcher.add_handler(handler)
+
+        process = multiprocessing.Process(
+            target=app.run)
+        process.start()
+        updater.start_polling()
+
+    @classmethod
+    def create_app(cls):
+        app, bot, update_queue = _build_app_and_bot_for(cls)
+        dispatcher = telegram.ext.Dispatcher(bot, update_queue)
+
+        for handler in cls.handlers():
+            dispatcher.add_handler(handler)
+
+        process = multiprocessing.Process(
+            target=dispatcher.start)
+        process.start()
+        bot.set_webhook(
+            f'{API_LOCATION}/hook/{cls.TOKEN}')
+
+        # Make sure that the dispatcher is up
+        time.sleep(5)
+
+        return app
 
     @staticmethod
     def force_authorization(bot, update):
