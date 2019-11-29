@@ -7,7 +7,8 @@ from datetime import (
 
 from spotipy import oauth2, Spotify
 from spotipy.oauth2 import is_token_expired
-from spotigram.token_cache import get_store_from_env_for
+
+from spotigram.store import get_store_from_env_for
 
 CLIENT_ID = os.getenv('SPOTIPY_CLIENT_ID')
 CLIENT_SECRET = os.getenv('SPOTIPY_CLIENT_SECRET')

@@ -5,11 +5,11 @@ from telegram.ext import (
     MessageHandler,
 )
 
-from spotigram.token_cache import get_store_from_env_for
 from spotigram import (
     SpotigramBot,
     spotify_multi_action,
 )
+from spotigram.store import get_store_from_env_for
 from genres import (
     GenrePlaylist,
     random_genres,
