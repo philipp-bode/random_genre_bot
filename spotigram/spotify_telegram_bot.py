@@ -102,7 +102,7 @@ class SpotigramBot:
         chat_id = update.message.chat_id
         users_markdown = '\n'.join([
             user_link(user)
-            for user in CACHE.get_users(chat_id)
+            for user in CACHE.keys_for(chat_id)
         ])
         bot.send_message(
             chat_id=chat_id,

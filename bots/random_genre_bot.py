@@ -5,21 +5,28 @@ from telegram.ext import (
     MessageHandler,
 )
 
+from spotigram.token_cache import get_store_from_env_for
 from spotigram import (
     SpotigramBot,
-    spotify_action,
     spotify_multi_action,
 )
-from genres import random_genres
+from genres import (
+    GenrePlaylist,
+    random_genres,
+)
+
+CHAT_DATA = get_store_from_env_for('chat')
 
 
 class RandomGenreBot(SpotigramBot):
 
     @staticmethod
-    @spotify_action
-    def genres(client, bot, update, chat_data):
+    def genres(bot, update, chat_data):
+        chat_id = update.message.chat_id
         playlists = random_genres(3)
-        chat_data['playlists'] = playlists
+
+        CHAT_DATA.set(chat_id, 'playlists', [pl._uri for pl in playlists])
+
         response = 'Choose a genre:\n\n' + '\n'.join([
             f'({pos + 1}) {pl.name}' for pos, pl in
             enumerate(playlists)
@@ -28,7 +35,7 @@ class RandomGenreBot(SpotigramBot):
             [[str(pos)] for pos in range(1, len(playlists) + 1)]
         )
         bot.send_message(
-            chat_id=update.message.chat_id,
+            chat_id=chat_id,
             text=response,
             reply_markup=keyboard
         )
@@ -41,13 +48,16 @@ class RandomGenreBot(SpotigramBot):
         except ValueError:
             choice = None
 
-        if choice and 'playlists' in chat_data:
-            pl = chat_data['playlists'][choice - 1]
+        chat_id = update.message.chat_id
+        playlist_uris = CHAT_DATA.get(chat_id, 'playlists')
+
+        if choice and playlist_uris:
+            pl = GenrePlaylist(playlist_uris[choice - 1])
             multi_client.start_playback(
                 context_uri=pl.uri)
 
             bot.send_message(
-                chat_id=update.message.chat_id,
+                chat_id=chat_id,
                 text=f'Now listening to: [{pl.name}]({pl.link})',
                 reply_markup=telegram.ReplyKeyboardRemove(),
                 parse_mode=telegram.ParseMode.MARKDOWN,

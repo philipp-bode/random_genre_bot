@@ -1,4 +1,3 @@
-import json
 import jwt
 import os
 from datetime import (
@@ -8,12 +7,12 @@ from datetime import (
 
 from spotipy import oauth2, Spotify
 from spotipy.oauth2 import is_token_expired
-from spotigram.token_cache import RedisTokenCache
+from spotigram.token_cache import get_store_from_env_for
 
 CLIENT_ID = os.getenv('SPOTIPY_CLIENT_ID')
 CLIENT_SECRET = os.getenv('SPOTIPY_CLIENT_SECRET')
 
-CACHE = RedisTokenCache(os.getenv('REDIS_URL', 'localhost'))
+CACHE = get_store_from_env_for('token')
 
 API_LOCATION = os.getenv('API_LOCATION', 'http://localhost:5000')
 REDIRECT_URI = f'{API_LOCATION}/callback'
@@ -76,11 +75,7 @@ def get_clients_or_auth_url(
     force_reauth: bool = False
 ):
 
-    token_infos = [
-        json.loads(t)
-        for t in CACHE.get_tokens(chat_id)
-    ]
-
+    token_infos = CACHE.values_for(chat_id)
     if not token_infos or force_reauth:
         if token_infos:
             CACHE.clear(chat_id)
