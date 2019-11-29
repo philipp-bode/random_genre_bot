@@ -1,6 +1,7 @@
 import os
 import multiprocessing
 import time
+from random import random
 
 import telegram
 from telegram.ext import (
@@ -71,11 +72,16 @@ class SpotigramBot:
         process = multiprocessing.Process(
             target=dispatcher.start)
         process.start()
-        bot.set_webhook(
-            f'{API_LOCATION}/hook/{cls.TOKEN}')
 
-        # Make sure that the dispatcher is up
-        time.sleep(5)
+        # To avoid concurrent calls when starting multiple workers,
+        # retry with random jitter.
+        webhook_set = False
+        while not webhook_set:
+            try:
+                webhook_set = bot.set_webhook(
+                    f'{API_LOCATION}/hook/{cls.TOKEN}')
+            except telegram.error.RetryAfter as e:
+                time.sleep(e.retry_after + random() * 5)
 
         return app
 
