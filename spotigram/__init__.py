@@ -4,6 +4,7 @@ from .actions import (
 )
 from .spotify_telegram_bot import SpotigramBot
 
+
 __all__ = [
     'spotify_action',
     'spotify_multi_action',

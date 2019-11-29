@@ -14,7 +14,7 @@ class ListenTogetherBot(SpotigramBot):
 
     @staticmethod
     @spotify_multi_action
-    def select(multi_client, bot, update, chat_data):
+    def select(multi_client, bot, update):
 
         text = update.message.text
 
@@ -38,7 +38,7 @@ class ListenTogetherBot(SpotigramBot):
     @classmethod
     def custom_handlers(cls):
         return (
-            MessageHandler(Filters.text, cls.select, pass_chat_data=True),
+            MessageHandler(Filters.text, cls.select),
         )
 
 
