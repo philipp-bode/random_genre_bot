@@ -156,6 +156,13 @@ class SpotigramBot:
         bot.send_message(
             chat_id=update.message.chat_id, text='Playing...')
 
+    @staticmethod
+    @spotify_multi_action
+    def next_track(multi_client, bot, update):
+        multi_client.next_track()
+        bot.send_message(
+            chat_id=update.message.chat_id, text='Next song...')
+
     @classmethod
     def custom_handlers(cls):
         return []
@@ -170,5 +177,6 @@ class SpotigramBot:
             CommandHandler('start', cls.force_authorization),
             CommandHandler('pause', cls.pause),
             CommandHandler('play', cls.play),
+            CommandHandler('next', cls.next_track),
             *cls.custom_handlers(),
         )
