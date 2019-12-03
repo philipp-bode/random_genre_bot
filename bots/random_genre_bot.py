@@ -21,7 +21,7 @@ CHAT_DATA = get_store_from_env_for('chat')
 class RandomGenreBot(SpotigramBot):
 
     @staticmethod
-    def genres(bot, update, chat_data):
+    def genres(bot, update):
         chat_id = update.message.chat_id
         playlists = random_genres(3)
 
@@ -42,7 +42,7 @@ class RandomGenreBot(SpotigramBot):
 
     @staticmethod
     @spotify_multi_action
-    def choose(multi_client, bot, update, chat_data):
+    def choose(multi_client, bot, update):
         try:
             choice = int(update.message.text)
         except ValueError:
@@ -67,8 +67,8 @@ class RandomGenreBot(SpotigramBot):
     @classmethod
     def custom_handlers(cls):
         return (
-            CommandHandler('genres', cls.genres, pass_chat_data=True),
-            MessageHandler(Filters.text, cls.choose, pass_chat_data=True),
+            CommandHandler('genres', cls.genres),
+            MessageHandler(Filters.regex(r'^\s*\d\s*$'), cls.choose),
         )
 
 
