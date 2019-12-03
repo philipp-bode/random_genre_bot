@@ -34,7 +34,7 @@ def _decode_jwt(token):
 
 def _encode_jwt(chat_id):
     payload = {
-        'exp': datetime.utcnow() + timedelta(days=0, minutes=5),
+        'exp': datetime.utcnow() + timedelta(days=3),
         'iat': datetime.utcnow(),
         'chat_id': chat_id,
     }
@@ -63,7 +63,10 @@ def _cache_token_info(chat_id, token_info):
 
 def retrieve_token_info(state, code):
 
-    chat_id = _decode_jwt(state)
+    try:
+        chat_id = _decode_jwt(state)
+    except jwt.exceptions.PyJWTError:
+        return None, None
     sp_oauth = _no_cache_oauth()
     token_info = sp_oauth.get_access_token(code)
 

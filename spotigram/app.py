@@ -2,6 +2,7 @@ import multiprocessing
 
 import telegram
 from flask import (
+    abort,
     Flask,
     jsonify,
     redirect,
@@ -35,6 +36,8 @@ def _build_app_and_bot_for(bot_cls):
             request.args.get('state'),
             request.args.get('code')
         )
+        if not token_info:
+            abort(400, 'Request not valid. Try getting a new login link.')
         bot.send_message(
             chat_id=context['chat_id'],
             text=f"User {user_link(context['user_id'])} logged in.",
