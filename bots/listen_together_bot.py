@@ -26,7 +26,7 @@ class ListenTogetherBot(SpotigramBot):
 
         uri = None
 
-        if uri_type in ['playlist', 'track', 'album']:
+        if uri_type in ['playlist', 'track', 'album', 'artist']:
             try:
                 track = getattr(multi_client.single_client, uri_type)(text)
                 uri = track['uri']
