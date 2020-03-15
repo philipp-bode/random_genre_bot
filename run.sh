@@ -1,1 +1,1 @@
-gunicorn "bots.random_genre_bot:RandomGenreBot.create_app()" --log-file=-
+gunicorn "bots.listen_together_bot:ListenTogetherBot.create_app()" --log-file=-
