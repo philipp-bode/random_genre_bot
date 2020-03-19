@@ -39,7 +39,7 @@ class ListenTogetherBot(SpotigramBot):
             multi_client.add_to_queue(uri)
             bot.send_message(
                 chat_id=update.message.chat_id,
-                text=f'Now listening to: {uri}'
+                text=f'Added to queue: {uri}'
             )
 
     @classmethod
