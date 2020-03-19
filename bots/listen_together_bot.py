@@ -36,7 +36,7 @@ class ListenTogetherBot(SpotigramBot):
             uri = text
 
         if uri:
-            multi_client.start_playback(uris=[uri])
+            multi_client.add_to_queue(uri)
             bot.send_message(
                 chat_id=update.message.chat_id,
                 text=f'Now listening to: {uri}'
