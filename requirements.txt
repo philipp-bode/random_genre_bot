@@ -3,5 +3,5 @@ gunicorn==19.9.0
 git+git://github.com/Philipp-Bode/spotipy.git@master
 PyJWT==1.7.1
 python-telegram-bot==11.1.0
-redis==3.0.1
+redis==4.3.6
 redislite==5.0.159960
